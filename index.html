@@ -1,0 +1,104 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="https://lucide.dev/logo.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AIRA | AI Voice Automation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400;1,6..96,500;1,6..96,600;1,6..96,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              serif: ['Bodoni Moda', 'serif'],
+            },
+            colors: {
+              dark: {
+                950: '#000000',
+                900: '#0A0A0A',
+                800: '#121212',
+              }
+            },
+            backgroundImage: {
+              'grid-pattern': "linear-gradient(to right, #222 1px, transparent 1px), linear-gradient(to bottom, #222 1px, transparent 1px)",
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #000000;
+        color: #ffffff;
+        overflow-x: hidden;
+        cursor: none;
+      }
+      
+      @media (max-width: 768px) {
+        body {
+          cursor: auto;
+        }
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      ::selection {
+        background: #ffffff;
+        color: black;
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #000; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #333; 
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #555; 
+      }
+      
+      .font-serif {
+        font-family: 'Bodoni Moda', serif;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react/": "https://esm.sh/react@18.2.0/",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react-dom/": "https://esm.sh/react-dom@18.2.0/",
+    "react-router-dom": "https://esm.sh/react-router-dom@6.22.3?deps=react@18.2.0,react-dom@18.2.0",
+    "framer-motion": "https://esm.sh/framer-motion@11.0.8?deps=react@18.2.0,react-dom@18.2.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0?deps=react@18.2.0",
+    "@splinetool/react-spline": "https://esm.sh/@splinetool/react-spline@2.2.6?deps=react@18.2.0,react-dom@18.2.0",
+    "@splinetool/runtime": "https://esm.sh/@splinetool/runtime@1.0.55",
+    "express": "https://esm.sh/express@^5.2.1",
+    "@prisma/client": "https://esm.sh/@prisma/client@^7.2.0",
+    "express-rate-limit": "https://esm.sh/express-rate-limit@^8.2.1",
+    "helmet": "https://esm.sh/helmet@^8.1.0",
+    "dotenv": "https://esm.sh/dotenv@^17.2.3",
+    "cors": "https://esm.sh/cors@^2.8.5",
+    "zod": "https://esm.sh/zod@^4.3.5"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
