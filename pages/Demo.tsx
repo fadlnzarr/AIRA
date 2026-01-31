@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AnimatedSection } from '../components/AnimatedSection';
 import { Play, Square, ChevronLeft, ChevronRight, ChevronDown, Clock, Check, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6,20 +6,20 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
 
 const DEMO_TRACKS = [
-    { title: "Medical Appointment Booking", duration: "2:14" },
-    { title: "Real Estate Qualification", duration: "1:45" },
-    { title: "Restaurant Reservation", duration: "3:02" }
+    { title: "Medical Appointment Booking", duration: "2:14", audioSrc: "/audio/Medical Appointment.mp3" },
+    { title: "Real Estate Qualification", duration: "1:45", audioSrc: "/audio/Real Estate Qualification.mp3" },
+    { title: "Restaurant Reservation", duration: "3:02", audioSrc: "/audio/Restaurant reservation.mp3" }
 ];
 
 const TIME_SLOTS = [
-    "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM", 
+    "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
     "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
     "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM",
     "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM"
 ];
 
 const MONTH_NAMES = [
-    "January", "February", "March", "April", "May", "June", 
+    "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
 ];
 
@@ -50,23 +50,59 @@ const slideVariants = {
 export const Demo: React.FC = () => {
     const navigate = useNavigate();
     const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const audioRef = useRef<HTMLAudioElement | null>(null);
 
     // Calendar State
     const [viewDate, setViewDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
     const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
-    
+
     // Track direction for animation (-1 for prev, 1 for next)
     const [direction, setDirection] = useState(0);
 
+    // Audio cleanup and event handlers
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
+
+    // Handle audio time updates
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+        const handleLoadedMetadata = () => setDuration(audio.duration);
+        const handleEnded = () => {
+            setPlayingIndex(null);
+            setCurrentTime(0);
+        };
+
+        audio.addEventListener('timeupdate', handleTimeUpdate);
+        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audio.addEventListener('ended', handleEnded);
+
+        return () => {
+            audio.removeEventListener('timeupdate', handleTimeUpdate);
+            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            audio.removeEventListener('ended', handleEnded);
+        };
+    }, [playingIndex]);
+
     // Calendar Logic
     const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    
+
     // Get day of week for the 1st of the month (0 = Mon, 6 = Sun)
     const getFirstDayOfMonth = (date: Date) => {
         const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-        return day === 0 ? 6 : day - 1; 
+        return day === 0 ? 6 : day - 1;
     };
 
     const handlePrevMonth = () => {
@@ -96,17 +132,43 @@ export const Demo: React.FC = () => {
 
     const handleBookAppointment = () => {
         if (selectedDate && selectedTime) {
-            navigate('/contact', { 
-                state: { 
-                    bookingDate: selectedDate.toISOString(), 
-                    bookingTime: selectedTime 
-                } 
+            navigate('/contact', {
+                state: {
+                    bookingDate: selectedDate.toISOString(),
+                    bookingTime: selectedTime
+                }
             });
         }
     };
 
     const togglePlay = (index: number) => {
-        setPlayingIndex(playingIndex === index ? null : index);
+        // If clicking the same track that's playing, pause it
+        if (playingIndex === index) {
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+            setPlayingIndex(null);
+            return;
+        }
+
+        // Stop any currently playing audio
+        if (audioRef.current) {
+            audioRef.current.pause();
+        }
+
+        // Create new audio and play
+        const track = DEMO_TRACKS[index];
+        audioRef.current = new Audio(track.audioSrc);
+        audioRef.current.play().catch(console.error);
+        setPlayingIndex(index);
+        setCurrentTime(0);
+    };
+
+    // Format time as MM:SS
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
     const daysInMonth = getDaysInMonth(viewDate);
@@ -114,10 +176,10 @@ export const Demo: React.FC = () => {
 
     // Check if a day is selected
     const isSelected = (day: number) => {
-        return selectedDate && 
-               selectedDate.getDate() === day && 
-               selectedDate.getMonth() === viewDate.getMonth() && 
-               selectedDate.getFullYear() === viewDate.getFullYear();
+        return selectedDate &&
+            selectedDate.getDate() === day &&
+            selectedDate.getMonth() === viewDate.getMonth() &&
+            selectedDate.getFullYear() === viewDate.getFullYear();
     };
 
     return (
@@ -138,14 +200,14 @@ export const Demo: React.FC = () => {
                             {DEMO_TRACKS.map((track, i) => {
                                 const isPlaying = playingIndex === i;
                                 return (
-                                    <motion.div 
-                                        key={i} 
+                                    <motion.div
+                                        key={i}
                                         layout
                                         onClick={() => togglePlay(i)}
                                         className={`border transition-all duration-500 cursor-pointer overflow-hidden ${isPlaying ? 'border-white bg-white/5' : 'border-white/10 hover:bg-white hover:text-black group'}`}
                                     >
                                         <motion.div layout className="flex items-center gap-6 p-6">
-                                            <div className={`font-sans font-bold text-sm ${isPlaying ? 'text-white' : 'group-hover:text-black'}`}>0{i+1}</div>
+                                            <div className={`font-sans font-bold text-sm ${isPlaying ? 'text-white' : 'group-hover:text-black'}`}>0{i + 1}</div>
                                             <div className="text-left flex-grow">
                                                 <div className={`text-lg font-serif italic ${isPlaying ? 'text-white' : 'group-hover:text-black'}`}>{track.title}</div>
                                             </div>
@@ -166,9 +228,11 @@ export const Demo: React.FC = () => {
                                                     <div className="pt-4 border-t border-white/10">
                                                         <div className="flex justify-between items-end mb-4">
                                                             <span className="text-xs font-sans uppercase tracking-widest text-white/40">Audio Output</span>
-                                                            <span className="text-xs font-sans font-bold text-white">{track.duration}</span>
+                                                            <span className="text-xs font-sans font-bold text-white">
+                                                                {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : track.duration}
+                                                            </span>
                                                         </div>
-                                                        
+
                                                         {/* Voice Waveform Visualizer */}
                                                         <div className="h-32 flex items-center justify-center gap-1 w-full my-4">
                                                             {[...Array(45)].map((_, barIndex) => (
@@ -176,7 +240,7 @@ export const Demo: React.FC = () => {
                                                                     key={barIndex}
                                                                     className="w-1.5 bg-white rounded-full flex-shrink-0"
                                                                     initial={{ height: "10%" }}
-                                                                    animate={{ 
+                                                                    animate={{
                                                                         height: ["10%", `${Math.max(10, Math.random() * 100)}%`, "10%"]
                                                                     }}
                                                                     transition={{
@@ -189,9 +253,19 @@ export const Demo: React.FC = () => {
                                                                 />
                                                             ))}
                                                         </div>
-                                                        
+
+                                                        {/* Progress Bar */}
+                                                        <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                                                            <motion.div
+                                                                className="h-full bg-white rounded-full"
+                                                                initial={{ width: "0%" }}
+                                                                animate={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%" }}
+                                                                transition={{ duration: 0.1 }}
+                                                            />
+                                                        </div>
+
                                                         <div className="flex justify-between items-center mt-6">
-                                                            <div className="text-xs text-white/30 font-sans tracking-wider uppercase">Processing Intent...</div>
+                                                            <div className="text-xs text-white/30 font-sans tracking-wider uppercase">Now Playing</div>
                                                         </div>
                                                     </div>
                                                 </motion.div>
@@ -205,16 +279,16 @@ export const Demo: React.FC = () => {
 
                     {/* Interactive Calendar Section */}
                     <AnimatedSection delay={0.2} className="bg-white text-black min-h-[600px] p-8 md:p-12 flex flex-col h-full shadow-2xl relative overflow-visible">
-                         <div className="flex-grow flex flex-col">
-                             <h3 className="font-serif italic font-light text-4xl mb-2">Book Strategy Call</h3>
-                             <p className="text-black/60 mb-8 font-sans">Syncs with our real-time availability.</p>
-                             
-                             {/* Calendar Container */}
-                             <div className="w-full max-w-md mx-auto border border-black/10 p-6 bg-white shadow-lg space-y-6 z-10">
-                                 
-                                 {/* Header: Month/Year Nav */}
-                                 <div className="flex justify-between items-center border-b border-black/10 pb-4">
-                                     <div className="font-serif italic text-2xl w-40">
+                        <div className="flex-grow flex flex-col">
+                            <h3 className="font-serif italic font-light text-4xl mb-2">Book Strategy Call</h3>
+                            <p className="text-black/60 mb-8 font-sans">Syncs with our real-time availability.</p>
+
+                            {/* Calendar Container */}
+                            <div className="w-full max-w-md mx-auto border border-black/10 p-6 bg-white shadow-lg space-y-6 z-10">
+
+                                {/* Header: Month/Year Nav */}
+                                <div className="flex justify-between items-center border-b border-black/10 pb-4">
+                                    <div className="font-serif italic text-2xl w-40">
                                         <AnimatePresence mode="popLayout" custom={direction}>
                                             <motion.div
                                                 key={viewDate.toISOString()}
@@ -226,34 +300,34 @@ export const Demo: React.FC = () => {
                                                 {MONTH_NAMES[viewDate.getMonth()]} <span className="font-sans font-bold not-italic text-lg ml-1">{viewDate.getFullYear()}</span>
                                             </motion.div>
                                         </AnimatePresence>
-                                     </div>
-                                     <div className="flex gap-1">
-                                         <button 
+                                    </div>
+                                    <div className="flex gap-1">
+                                        <button
                                             onClick={handlePrevMonth}
                                             className="w-8 h-8 flex items-center justify-center border border-black/10 hover:bg-black hover:text-white transition-colors rounded-full"
-                                         >
+                                        >
                                             <ChevronLeft className="w-4 h-4" />
-                                         </button>
-                                         <button 
+                                        </button>
+                                        <button
                                             onClick={handleNextMonth}
                                             className="w-8 h-8 flex items-center justify-center border border-black/10 hover:bg-black hover:text-white transition-colors rounded-full"
-                                         >
+                                        >
                                             <ChevronRight className="w-4 h-4" />
-                                         </button>
-                                     </div>
-                                 </div>
+                                        </button>
+                                    </div>
+                                </div>
 
-                                 {/* Days Grid - Animated Transition */}
-                                 <div className="space-y-2 overflow-hidden">
-                                     {/* Day Labels */}
-                                     <div className="grid grid-cols-7 gap-2 mb-2">
-                                         {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-                                              <div key={i} className="text-xs font-bold text-black/30 text-center uppercase tracking-wider">{d}</div>
-                                         ))}
-                                     </div>
-                                     
-                                     {/* Animated Days Container */}
-                                     <div className="relative min-h-[220px]">
+                                {/* Days Grid - Animated Transition */}
+                                <div className="space-y-2 overflow-hidden">
+                                    {/* Day Labels */}
+                                    <div className="grid grid-cols-7 gap-2 mb-2">
+                                        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                                            <div key={i} className="text-xs font-bold text-black/30 text-center uppercase tracking-wider">{d}</div>
+                                        ))}
+                                    </div>
+
+                                    {/* Animated Days Container */}
+                                    <div className="relative min-h-[220px]">
                                         <AnimatePresence mode="popLayout" custom={direction}>
                                             <motion.div
                                                 key={`${viewDate.getMonth()}-${viewDate.getFullYear()}`}
@@ -272,7 +346,7 @@ export const Demo: React.FC = () => {
                                                 {[...Array(startPadding)].map((_, i) => (
                                                     <div key={`empty-${i}`} className="aspect-square" />
                                                 ))}
-                                                
+
                                                 {/* Actual Days */}
                                                 {[...Array(daysInMonth)].map((_, i) => {
                                                     const day = i + 1;
@@ -300,16 +374,16 @@ export const Demo: React.FC = () => {
                                                 })}
                                             </motion.div>
                                         </AnimatePresence>
-                                     </div>
-                                 </div>
+                                    </div>
+                                </div>
 
-                                 {/* Time Selection & Booking Action */}
-                                 <div className="pt-4 border-t border-black/10 relative">
+                                {/* Time Selection & Booking Action */}
+                                <div className="pt-4 border-t border-black/10 relative">
                                     <label className="block text-xs font-bold uppercase tracking-widest text-black/40 mb-2">Available Time</label>
-                                    
+
                                     <div className="space-y-4">
                                         <div className="relative">
-                                            <button 
+                                            <button
                                                 onClick={() => setIsTimeDropdownOpen(!isTimeDropdownOpen)}
                                                 className="w-full border border-black/20 p-3 flex justify-between items-center bg-white hover:border-black transition-colors"
                                             >
@@ -362,9 +436,9 @@ export const Demo: React.FC = () => {
                                                     animate={{ opacity: 1, y: 0, height: 'auto' }}
                                                     exit={{ opacity: 0, y: 10, height: 0 }}
                                                 >
-                                                    <Button 
-                                                        variant="secondary" 
-                                                        className="w-full justify-between group" 
+                                                    <Button
+                                                        variant="secondary"
+                                                        className="w-full justify-between group"
                                                         onClick={handleBookAppointment}
                                                     >
                                                         <span>Confirm Booking</span>
@@ -374,10 +448,10 @@ export const Demo: React.FC = () => {
                                             )}
                                         </AnimatePresence>
                                     </div>
-                                 </div>
+                                </div>
 
-                             </div>
-                         </div>
+                            </div>
+                        </div>
                     </AnimatedSection>
                 </div>
             </div>

@@ -27,14 +27,16 @@ const AnimatedRoutes = () => {
 
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><Home /></PageTransition>} />
-        <Route path="/solutions" element={<PageTransition><Solutions /></PageTransition>} />
-        <Route path="/how-it-works" element={<PageTransition><HowItWorks /></PageTransition>} />
-        <Route path="/demo" element={<PageTransition><Demo /></PageTransition>} />
-        <Route path="/about" element={<PageTransition><About /></PageTransition>} />
-        <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
-      </Routes>
+      <div key={location.pathname}>
+        <Routes location={location}>
+          <Route path="/" element={<PageTransition><Home /></PageTransition>} />
+          <Route path="/solutions" element={<PageTransition><Solutions /></PageTransition>} />
+          <Route path="/how-it-works" element={<PageTransition><HowItWorks /></PageTransition>} />
+          <Route path="/demo" element={<PageTransition><Demo /></PageTransition>} />
+          <Route path="/about" element={<PageTransition><About /></PageTransition>} />
+          <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
+        </Routes>
+      </div>
     </AnimatePresence>
   );
 };
