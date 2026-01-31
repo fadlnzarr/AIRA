@@ -6,7 +6,6 @@ import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 import { Solutions } from './pages/Solutions';
 import { HowItWorks } from './pages/HowItWorks';
-import { Pricing } from './pages/Pricing';
 import { Demo } from './pages/Demo';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
@@ -32,7 +31,6 @@ const AnimatedRoutes = () => {
         <Route path="/" element={<PageTransition><Home /></PageTransition>} />
         <Route path="/solutions" element={<PageTransition><Solutions /></PageTransition>} />
         <Route path="/how-it-works" element={<PageTransition><HowItWorks /></PageTransition>} />
-        <Route path="/pricing" element={<PageTransition><Pricing /></PageTransition>} />
         <Route path="/demo" element={<PageTransition><Demo /></PageTransition>} />
         <Route path="/about" element={<PageTransition><About /></PageTransition>} />
         <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />

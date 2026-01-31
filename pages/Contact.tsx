@@ -2,20 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatedSection } from '../components/AnimatedSection';
 import { Button } from '../components/Button';
-import { Send, Phone, Mail, Calendar, Clock, Zap, ChevronDown, Loader2 } from 'lucide-react';
+import { Send, Phone, Mail, Calendar, Clock, Loader2 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import { PRICING_TIERS } from '../constants';
 
 interface BookingState {
     bookingDate?: string;
     bookingTime?: string;
-    selectedPlan?: string;
 }
 
 export const Contact: React.FC = () => {
     const location = useLocation();
     const state = location.state as BookingState | null;
-    const { bookingDate: preBookingDate, bookingTime: preBookingTime, selectedPlan: preSelectedPlan } = state || {};
+    const { bookingDate: preBookingDate, bookingTime: preBookingTime } = state || {};
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const [formState, setFormState] = useState({
@@ -25,15 +23,11 @@ export const Contact: React.FC = () => {
         phone: '',
         industry: '',
         message: '',
-        plan: '',
         requestedDate: ''
     });
 
     // Handle Pre-filled Data
     useEffect(() => {
-        let msg = '';
-
-        // Handle Date/Time from Demo Page
         if (preBookingDate && preBookingTime) {
             const dateStr = new Date(preBookingDate).toLocaleDateString(undefined, {
                 weekday: 'long',
@@ -41,19 +35,10 @@ export const Contact: React.FC = () => {
                 month: 'long',
                 day: 'numeric'
             });
-            msg += `I would like to confirm my appointment for ${dateStr} at ${preBookingTime}. `;
+            const msg = `I would like to confirm my appointment for ${dateStr} at ${preBookingTime}.`;
+            setFormState(prev => ({ ...prev, message: msg }));
         }
-
-        // Handle Plan from Pricing Page
-        if (preSelectedPlan) {
-            setFormState(prev => ({ ...prev, plan: preSelectedPlan }));
-            msg += `I am interested in the ${preSelectedPlan} plan. `;
-        }
-
-        if (msg) {
-            setFormState(prev => ({ ...prev, message: msg.trim() }));
-        }
-    }, [preBookingDate, preBookingTime, preSelectedPlan]);
+    }, [preBookingDate, preBookingTime]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,7 +57,7 @@ export const Contact: React.FC = () => {
         const payload = {
             appointmentDate: finalDate || new Date().toISOString(),
             appointmentTime: finalTime || "Unspecified",
-            plan: formState.plan || (preSelectedPlan || "Undecided / Custom"),
+            plan: "Custom",
             fullName: formState.name,
             businessName: formState.business,
             email: formState.email,
@@ -95,7 +80,7 @@ export const Contact: React.FC = () => {
             if (response.ok) {
                 alert("Protocol Initiated. Booking Confirmed.\nWe will be in touch within 24 hours.");
                 setFormState({
-                    name: '', business: '', email: '', phone: '', industry: '', message: '', plan: '', requestedDate: ''
+                    name: '', business: '', email: '', phone: '', industry: '', message: '', requestedDate: ''
                 });
             } else {
                 console.error("Server Error:", data);
@@ -170,25 +155,6 @@ export const Contact: React.FC = () => {
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-8">
-                                    {/* Plan Selector */}
-                                    <div className="space-y-2 relative">
-                                        <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/40 font-sans">
-                                            <Zap className="w-3 h-3" /> Selection Plan
-                                        </label>
-                                        <div className="relative">
-                                            <select
-                                                name="plan"
-                                                value={formState.plan}
-                                                onChange={handleChange}
-                                                className="w-full bg-transparent border-b border-white/20 py-3 text-white font-serif italic text-2xl focus:outline-none focus:border-white transition-colors appearance-none cursor-pointer pr-8"
-                                            >
-                                                <option value="" className="bg-zinc-900">Custom / Undecided</option>
-                                                {PRICING_TIERS.map(t => <option key={t.name} value={t.name} className="bg-zinc-900">{t.name} Plan</option>)}
-                                            </select>
-                                            <ChevronDown className="absolute right-0 top-4 w-4 h-4 text-white/20 pointer-events-none" />
-                                        </div>
-                                    </div>
-
                                     {/* Time Selector / Display */}
                                     <div className="space-y-2">
                                         <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/40 font-sans">
@@ -209,7 +175,7 @@ export const Contact: React.FC = () => {
                                                 </div>
                                             </div>
                                         ) : (
-                                            // Input Mode (From Pricing/Direct)
+                                            // Input Mode (Direct)
                                             <div className="relative">
                                                 <input
                                                     type="datetime-local"

@@ -20,7 +20,6 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', path: '/' },
   { label: 'Solutions', path: '/solutions' },
   { label: 'How It Works', path: '/how-it-works' },
-  { label: 'Pricing', path: '/pricing' },
   { label: 'Demo', path: '/demo' },
   { label: 'About', path: '/about' },
   { label: 'Contact', path: '/contact' },
