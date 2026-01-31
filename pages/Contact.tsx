@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { AnimatedSection } from '../components/AnimatedSection';
 import { Button } from '../components/Button';
 import { Send, Phone, Mail, Calendar, Clock, Loader2 } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 interface BookingState {
     bookingDate?: string;
@@ -12,6 +12,7 @@ interface BookingState {
 
 export const Contact: React.FC = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const state = location.state as BookingState | null;
     const { bookingDate: preBookingDate, bookingTime: preBookingTime } = state || {};
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -78,9 +79,16 @@ export const Contact: React.FC = () => {
             const data = await response.json();
 
             if (response.ok) {
-                alert("Protocol Initiated. Booking Confirmed.\nWe will be in touch within 24 hours.");
-                setFormState({
-                    name: '', business: '', email: '', phone: '', industry: '', message: '', requestedDate: ''
+                // Navigate to confirmation page with booking data
+                navigate('/booking-confirmed', {
+                    state: {
+                        fullName: formState.name,
+                        businessName: formState.business,
+                        email: formState.email,
+                        appointmentDate: finalDate || new Date().toISOString(),
+                        appointmentTime: finalTime || "Unspecified"
+                    },
+                    replace: true
                 });
             } else {
                 console.error("Server Error:", data);

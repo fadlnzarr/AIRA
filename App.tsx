@@ -9,6 +9,7 @@ import { HowItWorks } from './pages/HowItWorks';
 import { Demo } from './pages/Demo';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
+import { BookingConfirmation } from './pages/BookingConfirmation';
 import { CustomCursor } from './components/CustomCursor';
 import { PageTransition } from './components/PageTransition';
 
@@ -35,6 +36,7 @@ const AnimatedRoutes = () => {
           <Route path="/demo" element={<PageTransition><Demo /></PageTransition>} />
           <Route path="/about" element={<PageTransition><About /></PageTransition>} />
           <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
+          <Route path="/booking-confirmed" element={<PageTransition><BookingConfirmation /></PageTransition>} />
         </Routes>
       </div>
     </AnimatePresence>
