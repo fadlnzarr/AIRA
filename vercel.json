@@ -1,0 +1,10 @@
+{
+    "buildCommand": "npm run build && npx prisma generate",
+    "outputDirectory": "dist",
+    "framework": "vite",
+    "functions": {
+        "api/*.ts": {
+            "runtime": "nodejs20.x"
+        }
+    }
+}

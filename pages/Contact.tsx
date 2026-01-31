@@ -82,7 +82,7 @@ export const Contact: React.FC = () => {
         };
 
         try {
-            const response = await fetch('http://localhost:3001/api/book-appointment', {
+            const response = await fetch('/api/book-appointment', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
