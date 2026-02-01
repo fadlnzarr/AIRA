@@ -50,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const booking = await prisma.booking.create({
             data: {
-                appointmentDate: new Date(data.appointmentDate),
+                appointmentDate: data.appointmentDate,
                 appointmentTime: data.appointmentTime,
                 plan: data.plan || "Undecided / Custom",
                 fullName: data.fullName,
