@@ -9,7 +9,7 @@ datasource db {
 
 model Booking {
   id              String   @id @default(uuid())
-  appointmentDate DateTime
+  appointmentDate String
   appointmentTime String
   plan            String   @default("Undecided / Custom")
   fullName        String
