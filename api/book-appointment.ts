@@ -15,6 +15,8 @@ const prisma = new PrismaClient({
 const bookingSchema = z.object({
     appointmentDate: z.string(),
     appointmentTime: z.string(),
+    appointmentDateStr: z.string().optional(),
+    appointmentTimeStr: z.string().optional(),
     plan: z.string().optional(),
     fullName: z.string().min(1, "Name is required"),
     businessName: z.string().optional(),
@@ -52,6 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             data: {
                 appointmentDate: new Date(data.appointmentDate),
                 appointmentTime: data.appointmentTime,
+                appointmentDateStr: data.appointmentDateStr,
+                appointmentTimeStr: data.appointmentTimeStr,
                 plan: data.plan || "Undecided / Custom",
                 fullName: data.fullName,
                 businessName: data.businessName,

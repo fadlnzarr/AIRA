@@ -49,15 +49,40 @@ export const Contact: React.FC = () => {
         let finalDate = preBookingDate;
         let finalTime = preBookingTime;
 
+        // New: Clean string formats for n8n (no timezone conversion)
+        let dateStr = '';  // YYYY-MM-DD
+        let timeStr = '';  // HH:MM (24-hour)
+
         if (!finalDate && formState.requestedDate) {
             const dateObj = new Date(formState.requestedDate);
             finalDate = dateObj.toISOString();
             finalTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Extract clean date string
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            dateStr = `${year}-${month}-${day}`;
+
+            // Extract clean time string (24-hour)
+            const hours = String(dateObj.getHours()).padStart(2, '0');
+            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+            timeStr = `${hours}:${minutes}`;
+        } else if (finalDate) {
+            // From Demo page - extract date part
+            const dateObj = new Date(finalDate);
+            const year = dateObj.getFullYear();
+            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const day = String(dateObj.getDate()).padStart(2, '0');
+            dateStr = `${year}-${month}-${day}`;
+            timeStr = finalTime || '';
         }
 
         const payload = {
             appointmentDate: finalDate || new Date().toISOString(),
             appointmentTime: finalTime || "Unspecified",
+            appointmentDateStr: dateStr || undefined,
+            appointmentTimeStr: timeStr || undefined,
             plan: "Custom",
             fullName: formState.name,
             businessName: formState.business,
