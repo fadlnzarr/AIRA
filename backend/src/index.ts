@@ -34,8 +34,8 @@ app.use('/api', limiter);
 
 // --- Validation Schemas ---
 const bookingSchema = z.object({
-  appointmentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format"),
-  appointmentTime: z.string().regex(/^\d{2}:\d{2}$/, "Time must be in HH:MM format"),
+  appointmentDate: z.string().datetime(),
+  appointmentTime: z.string(),
   plan: z.string().optional(),
   fullName: z.string().min(1, "Name is required"),
   businessName: z.string().optional(),

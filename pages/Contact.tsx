@@ -46,31 +46,18 @@ export const Contact: React.FC = () => {
         setIsSubmitting(true);
 
         // Logic to determine final date and time values to send
-        // Date format: YYYY-MM-DD, Time format: HH:MM (24-hour)
-        let finalDate = preBookingDate; // Already YYYY-MM-DD from Demo page
-        let finalTime = preBookingTime; // Already HH:MM from Demo page
+        let finalDate = preBookingDate;
+        let finalTime = preBookingTime;
 
         if (!finalDate && formState.requestedDate) {
             const dateObj = new Date(formState.requestedDate);
-            // Format as YYYY-MM-DD
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            finalDate = `${year}-${month}-${day}`;
-
-            // Format time as HH:MM (24-hour)
-            const hours = String(dateObj.getHours()).padStart(2, '0');
-            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-            finalTime = `${hours}:${minutes}`;
+            finalDate = dateObj.toISOString();
+            finalTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
 
-        // Get today's date as fallback in YYYY-MM-DD format
-        const today = new Date();
-        const fallbackDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
         const payload = {
-            appointmentDate: finalDate || fallbackDate,
-            appointmentTime: finalTime || "00:00",
+            appointmentDate: finalDate || new Date().toISOString(),
+            appointmentTime: finalTime || "Unspecified",
             plan: "Custom",
             fullName: formState.name,
             businessName: formState.business,
@@ -98,8 +85,8 @@ export const Contact: React.FC = () => {
                         fullName: formState.name,
                         businessName: formState.business,
                         email: formState.email,
-                        appointmentDate: finalDate || fallbackDate,
-                        appointmentTime: finalTime || "00:00"
+                        appointmentDate: finalDate || new Date().toISOString(),
+                        appointmentTime: finalTime || "Unspecified"
                     },
                     replace: true
                 });
