@@ -31,12 +31,22 @@ export const BookingConfirmation: React.FC = () => {
     }
 
     const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString(undefined, {
+        // Handle YYYY-MM-DD format
+        const date = new Date(dateString + 'T00:00:00');
+        return date.toLocaleDateString(undefined, {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
             day: 'numeric'
         });
+    };
+
+    const formatTime = (timeString: string) => {
+        // Convert HH:MM to 12-hour format for display
+        const [hours, minutes] = timeString.split(':').map(Number);
+        const period = hours >= 12 ? 'PM' : 'AM';
+        const displayHours = hours % 12 || 12;
+        return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
     };
 
     return (
@@ -98,7 +108,7 @@ export const BookingConfirmation: React.FC = () => {
                                     </div>
                                     <div>
                                         <div className="text-xs font-bold uppercase tracking-widest text-black/40 font-sans mb-1">Time</div>
-                                        <div className="text-xl font-serif italic">{bookingData.appointmentTime}</div>
+                                        <div className="text-xl font-serif italic">{formatTime(bookingData.appointmentTime)}</div>
                                     </div>
                                 </div>
                             </div>

@@ -12,10 +12,22 @@ const DEMO_TRACKS = [
 ];
 
 const TIME_SLOTS = [
-    "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
-    "11:00 AM", "11:30 AM", "12:00 PM", "12:30 PM",
-    "01:00 PM", "01:30 PM", "02:00 PM", "02:30 PM",
-    "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM"
+    { display: "09:00 AM", value: "09:00" },
+    { display: "09:30 AM", value: "09:30" },
+    { display: "10:00 AM", value: "10:00" },
+    { display: "10:30 AM", value: "10:30" },
+    { display: "11:00 AM", value: "11:00" },
+    { display: "11:30 AM", value: "11:30" },
+    { display: "12:00 PM", value: "12:00" },
+    { display: "12:30 PM", value: "12:30" },
+    { display: "01:00 PM", value: "13:00" },
+    { display: "01:30 PM", value: "13:30" },
+    { display: "02:00 PM", value: "14:00" },
+    { display: "02:30 PM", value: "14:30" },
+    { display: "03:00 PM", value: "15:00" },
+    { display: "03:30 PM", value: "15:30" },
+    { display: "04:00 PM", value: "16:00" },
+    { display: "04:30 PM", value: "16:30" }
 ];
 
 const MONTH_NAMES = [
@@ -57,7 +69,7 @@ export const Demo: React.FC = () => {
     // Calendar State
     const [viewDate, setViewDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [selectedTime, setSelectedTime] = useState<string | null>(null);
+    const [selectedTime, setSelectedTime] = useState<{ display: string; value: string } | null>(null);
     const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
 
     // Track direction for animation (-1 for prev, 1 for next)
@@ -125,17 +137,23 @@ export const Demo: React.FC = () => {
         }
     };
 
-    const handleTimeSelect = (time: string) => {
+    const handleTimeSelect = (time: { display: string; value: string }) => {
         setSelectedTime(time);
         setIsTimeDropdownOpen(false);
     };
 
     const handleBookAppointment = () => {
         if (selectedDate && selectedTime) {
+            // Format date as YYYY-MM-DD only
+            const year = selectedDate.getFullYear();
+            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+            const day = String(selectedDate.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
+
             navigate('/contact', {
                 state: {
-                    bookingDate: selectedDate.toISOString(),
-                    bookingTime: selectedTime
+                    bookingDate: formattedDate,
+                    bookingTime: selectedTime.value
                 }
             });
         }
@@ -390,7 +408,7 @@ export const Demo: React.FC = () => {
                                                 <div className="flex items-center gap-2">
                                                     <Clock className="w-4 h-4 text-black/40" />
                                                     <span className={`font-sans ${selectedTime ? 'text-black font-bold' : 'text-black/40'}`}>
-                                                        {selectedTime || "Select a time"}
+                                                        {selectedTime?.display || "Select a time"}
                                                     </span>
                                                 </div>
                                                 <motion.div
@@ -412,15 +430,15 @@ export const Demo: React.FC = () => {
                                                         <div className="p-2 grid grid-cols-2 gap-1">
                                                             {TIME_SLOTS.map((time, index) => (
                                                                 <motion.button
-                                                                    key={time}
+                                                                    key={time.value}
                                                                     initial={{ opacity: 0, x: -10 }}
                                                                     animate={{ opacity: 1, x: 0 }}
                                                                     transition={{ delay: index * 0.03 }}
                                                                     onClick={() => handleTimeSelect(time)}
-                                                                    className={`p-2 text-sm text-left hover:bg-black hover:text-white transition-colors flex items-center justify-between group ${selectedTime === time ? 'bg-black text-white' : 'text-black/60'}`}
+                                                                    className={`p-2 text-sm text-left hover:bg-black hover:text-white transition-colors flex items-center justify-between group ${selectedTime?.value === time.value ? 'bg-black text-white' : 'text-black/60'}`}
                                                                 >
-                                                                    <span>{time}</span>
-                                                                    {selectedTime === time && <Check className="w-3 h-3" />}
+                                                                    <span>{time.display}</span>
+                                                                    {selectedTime?.value === time.value && <Check className="w-3 h-3" />}
                                                                 </motion.button>
                                                             ))}
                                                         </div>
