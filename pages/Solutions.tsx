@@ -223,13 +223,174 @@ const AfterHoursViz = () => (
   </div>
 );
 
+const ConversationDataViz = () => (
+  <div className="w-full h-full flex items-center justify-center p-4">
+    <div className="flex gap-3 items-center w-full max-w-[220px] justify-center">
+      {/* Speech Bubble */}
+      <div className="w-16 h-16 border border-white/30 rounded-lg flex flex-col items-center justify-center p-2 bg-black relative">
+        <div className="absolute -bottom-2 left-4 w-0 h-0 border-l-4 border-r-4 border-t-6 border-l-transparent border-r-transparent border-t-white/30" />
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="w-full h-1 bg-white/20 rounded mb-1"
+            animate={{ backgroundColor: ["rgba(255,255,255,0.2)", "rgba(255,255,255,0.8)", "rgba(255,255,255,0.2)"] }}
+            transition={{ duration: 1.5, delay: i * 0.3, repeat: Infinity }}
+          />
+        ))}
+      </div>
+
+      {/* Arrow Flow */}
+      <div className="flex flex-col items-center gap-1">
+        {[0, 1, 2].map(i => (
+          <motion.div
+            key={i}
+            className="w-1.5 h-1.5 bg-white rounded-full"
+            animate={{ x: [0, 8, 16], opacity: [0, 1, 0] }}
+            transition={{ duration: 1, repeat: Infinity, delay: i * 0.3, ease: "linear" }}
+          />
+        ))}
+      </div>
+
+      {/* Structured Data Card */}
+      <div className="w-20 h-20 border border-white/30 rounded-lg p-2 bg-black">
+        <div className="space-y-1.5">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex gap-1.5">
+              <div className="w-4 h-1.5 bg-white/40 rounded" />
+              <motion.div
+                className="flex-1 h-1.5 bg-white/20 rounded"
+                animate={{ backgroundColor: ["rgba(255,255,255,0.2)", "rgba(255,255,255,0.6)", "rgba(255,255,255,0.2)"] }}
+                transition={{ duration: 1.5, delay: i * 0.4 + 0.5, repeat: Infinity }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+const TrustSafetyViz = () => (
+  <div className="w-full h-full flex items-center justify-center p-4">
+    <div className="relative w-28 h-32 flex items-center justify-center">
+      {/* Shield Shape */}
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center"
+        animate={{ scale: [1, 1.02, 1] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        <svg viewBox="0 0 64 80" fill="none" className="w-24 h-28">
+          <motion.path
+            d="M32 4L8 16v20c0 16 10 28 24 36 14-8 24-20 24-36V16L32 4z"
+            stroke="rgba(255,255,255,0.4)"
+            strokeWidth="1.5"
+            fill="rgba(255,255,255,0.05)"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+          />
+        </svg>
+      </motion.div>
+
+      {/* Center Check */}
+      <motion.div
+        className="relative z-10 w-10 h-10 border-2 border-white/50 rounded-full flex items-center justify-center bg-black"
+        animate={{ borderColor: ["rgba(255,255,255,0.5)", "rgba(255,255,255,1)", "rgba(255,255,255,0.5)"] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      >
+        <motion.svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" className="w-5 h-5"
+          initial={{ pathLength: 0 }}
+          animate={{ pathLength: 1 }}
+          transition={{ duration: 0.8, delay: 0.5, repeat: Infinity, repeatDelay: 2 }}
+        >
+          <path d="M20 6L9 17l-5-5" />
+        </motion.svg>
+      </motion.div>
+
+      {/* Scanning Line */}
+      <motion.div
+        className="absolute left-1/2 w-16 h-0.5 bg-gradient-to-r from-transparent via-white/60 to-transparent -translate-x-1/2"
+        animate={{ top: ["20%", "80%", "20%"] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </div>
+  </div>
+);
+
+const DailyBriefViz = () => (
+  <div className="w-full h-full flex items-center justify-center p-4">
+    <div className="w-full max-w-[190px] border border-white/20 rounded-lg p-3 bg-white/5 backdrop-blur-sm">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3 border-b border-white/10 pb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-white/30" />
+          <div className="w-12 h-1.5 bg-white/30 rounded" />
+        </div>
+        <div className="w-6 h-1.5 bg-white/20 rounded" />
+      </div>
+
+      {/* KPI Metrics Row */}
+      <div className="grid grid-cols-3 gap-2 mb-3">
+        {[0, 1, 2].map((i) => (
+          <motion.div
+            key={i}
+            className="flex flex-col items-center p-1.5 border border-white/10 rounded bg-white/5"
+            animate={{ borderColor: ["rgba(255,255,255,0.1)", "rgba(255,255,255,0.4)", "rgba(255,255,255,0.1)"] }}
+            transition={{ duration: 2, delay: i * 0.4, repeat: Infinity }}
+          >
+            <motion.div
+              className="text-[10px] font-bold font-sans text-white"
+              initial={{ opacity: 0.5 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5, delay: i * 0.4, repeat: Infinity, repeatDelay: 2 }}
+            >
+              {[12, 8, 3][i]}
+            </motion.div>
+            <div className="w-full h-0.5 bg-white/20 rounded mt-1" />
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Mini Bar Chart */}
+      <div className="flex items-end gap-1 h-10 mb-2">
+        {[40, 60, 35, 80, 55, 70, 45].map((height, i) => (
+          <motion.div
+            key={i}
+            className="flex-1 bg-white/30 rounded-t"
+            initial={{ height: "0%" }}
+            animate={{ height: `${height}%` }}
+            transition={{ duration: 0.5, delay: i * 0.1, repeat: Infinity, repeatDelay: 3 }}
+          />
+        ))}
+      </div>
+
+      {/* Recommendation */}
+      <motion.div
+        className="w-full h-5 bg-white/20 rounded relative overflow-hidden"
+        initial={{ opacity: 0.5 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}
+      >
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+          animate={{ x: ["-100%", "100%"] }}
+          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+        />
+      </motion.div>
+    </div>
+  </div>
+);
+
 const VISUALIZATIONS: Record<string, React.FC> = {
   "AI Voice Receptionist": VoiceViz,
   "Appointment Booking": CalendarViz,
   "Lead Qualification": LeadViz,
   "Workflow Automation": WorkflowViz,
   "CRM Sync": CRMViz,
-  "After-Hours Handling": AfterHoursViz
+  "After-Hours Handling": AfterHoursViz,
+  "Conversation → Clean Data": ConversationDataViz,
+  "Trust & Safety Guardrails": TrustSafetyViz,
+  "Business-Owner Daily Brief": DailyBriefViz
 };
 
 export const Solutions: React.FC = () => {

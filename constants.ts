@@ -9,7 +9,11 @@ import {
   Briefcase,
   Stethoscope,
   Truck,
-  Home
+  Home,
+  ClipboardCheck,
+  FileText,
+  Shield,
+  LineChart
 } from 'lucide-react';
 import { NavItem, PricingTier, ServiceItem, UseCase } from './types';
 
@@ -84,6 +88,36 @@ export const SERVICES: ServiceItem[] = [
       "Revenue doesn’t stop at 5 PM.",
       "Every after-hours call captured.",
       "Opportunities secured while you sleep."
+    ]
+  },
+  {
+    title: "Conversation → Clean Data",
+    description: "Every call becomes structured, searchable business data.",
+    icon: FileText,
+    features: [
+      "Extracts intent, urgency, location, service type, preferred time.",
+      "Creates clean lead + job request records.",
+      "Eliminates manual \"what did they say?\" work."
+    ]
+  },
+  {
+    title: "Trust & Safety Guardrails",
+    description: "Sounds human—behaves responsibly.",
+    icon: Shield,
+    features: [
+      "Never invents pricing, policies, or availability.",
+      "Escalates when uncertain instead of guessing.",
+      "Redacts sensitive info from logs where needed."
+    ]
+  },
+  {
+    title: "Business-Owner Daily Brief",
+    description: "Proves ROI in one glance, every day.",
+    icon: LineChart,
+    features: [
+      "Leads captured, missed-call saves, emergencies flagged, jobs requested.",
+      "Top hesitation points (why callers didn't book).",
+      "Recommendations (hours, scripts, follow-up timing)."
     ]
   }
 ];
