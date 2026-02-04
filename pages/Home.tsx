@@ -8,6 +8,7 @@ import { AnimatedSection } from '../components/AnimatedSection';
 import { TextReveal } from '../components/TextReveal';
 import { Marquee } from '../components/Marquee';
 import { SERVICES } from '../constants';
+import { ParticlesBackground } from '../components/ParticlesBackground';
 
 export const Home: React.FC = () => {
     const navigate = useNavigate();
@@ -22,6 +23,9 @@ export const Home: React.FC = () => {
 
             {/* Hero Section */}
             <section className="relative h-screen flex flex-col items-center justify-center border-b border-white/10 overflow-hidden">
+
+                {/* Particles Background */}
+                <ParticlesBackground />
 
                 {/* Abstract Background Animation - Always Visible */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
