@@ -40,7 +40,7 @@ export const BookingConfirmation: React.FC = () => {
     };
 
     return (
-        <div className="pt-32 pb-20 min-h-screen bg-black">
+        <div className="pt-32 pb-20 min-h-screen">
             <div className="max-w-[1000px] mx-auto px-4 sm:px-8 lg:px-12">
                 <AnimatedSection className="text-center mb-16">
                     {/* Success Icon */}

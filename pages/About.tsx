@@ -3,12 +3,12 @@ import { AnimatedSection } from '../components/AnimatedSection';
 
 export const About: React.FC = () => {
     return (
-        <div className="pt-32 pb-20 bg-black min-h-screen">
+        <div className="pt-32 pb-20 min-h-screen">
             <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Hero Title with initial transition */}
                 <AnimatedSection className="mb-16">
                     <h1 className="text-6xl md:text-9xl font-serif italic font-light text-white leading-[0.9]">
-                        Human <br/> Potential.
+                        Human <br /> Potential.
                     </h1>
                 </AnimatedSection>
 
@@ -16,7 +16,7 @@ export const About: React.FC = () => {
                 <AnimatedSection delay={0.2} className="flex flex-col md:flex-row gap-12 md:gap-24 border-t border-white/20 pt-12 mb-32">
                     <div className="flex-1">
                         <p className="text-xl md:text-2xl text-white font-serif italic leading-relaxed">
-                            AIRA was founded on a simple belief: <br/>
+                            AIRA was founded on a simple belief: <br />
                             Humans shouldn't be robots.
                         </p>
                     </div>

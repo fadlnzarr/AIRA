@@ -397,7 +397,7 @@ export const Solutions: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="pt-32 pb-20 bg-black min-h-screen">
+    <div className="pt-32 pb-20 min-h-screen">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
         <AnimatedSection className="text-center mb-16 border-b border-white/10 pb-12">
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif italic font-light text-white mb-6 tracking-tight">

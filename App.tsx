@@ -48,7 +48,7 @@ const App: React.FC = () => {
     <HashRouter>
       <ScrollToTop />
       <CustomCursor />
-      <div className="min-h-screen flex flex-col font-sans bg-black text-white selection:bg-white selection:text-black">
+      <div className="site-shell min-h-screen flex flex-col font-sans text-white selection:bg-white selection:text-black">
         <Navbar />
         <main className="flex-grow">
           <AnimatedRoutes />

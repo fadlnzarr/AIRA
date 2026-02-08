@@ -33,11 +33,31 @@
       }
     </script>
     <style>
+      /* Brand Spectrum Color Variables */
+      :root {
+        --bg-0: #0B0713;
+        --bg-1: #160A2B;
+        --bg-2: #2A0F5C;
+        --bg-3: #5B2DFF;
+        --bg-lavender: #9B8CFF;
+        --text-main: rgba(255,255,255,0.92);
+        --text-body: rgba(255,255,255,0.78);
+        --text-muted: rgba(255,255,255,0.55);
+        --border-subtle: rgba(255,255,255,0.08);
+      }
+
       body {
-        background-color: #000000;
+        background: linear-gradient(180deg,
+          var(--bg-3) 0%,
+          var(--bg-2) 28%,
+          var(--bg-1) 55%,
+          var(--bg-0) 100%
+        );
+        background-attachment: fixed;
         color: #ffffff;
         overflow-x: hidden;
         cursor: none;
+        min-height: 100vh;
       }
       
       @media (max-width: 768px) {
@@ -51,27 +71,91 @@
       }
 
       ::selection {
-        background: #ffffff;
-        color: black;
+        background: var(--bg-lavender);
+        color: var(--bg-0);
       }
 
       ::-webkit-scrollbar {
         width: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #000; 
+        background: var(--bg-0); 
       }
       ::-webkit-scrollbar-thumb {
-        background: #333; 
+        background: var(--bg-2); 
         border-radius: 3px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #555; 
+        background: var(--bg-3); 
       }
       
       .font-serif {
         font-family: 'Bodoni Moda', serif;
       }
+
+      /* Site Shell - enables pseudo-element overlays */
+      .site-shell {
+        position: relative;
+        isolation: isolate;
+      }
+
+      /* Vertical Luminance Bands Overlay */
+      .site-shell::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          90deg,
+          transparent 0px,
+          transparent 120px,
+          rgba(155, 140, 255, 0.015) 120px,
+          rgba(155, 140, 255, 0.015) 122px,
+          transparent 122px,
+          transparent 280px,
+          rgba(91, 45, 255, 0.02) 280px,
+          rgba(91, 45, 255, 0.02) 283px,
+          transparent 283px,
+          transparent 400px
+        );
+        mix-blend-mode: soft-light;
+      }
+
+      /* Micro-Noise Texture Overlay */
+      .site-shell::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        opacity: 0.035;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+        mix-blend-mode: overlay;
+      }
+
+      /* Utility: Glass Card */
+      .glass-card {
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--border-subtle);
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Utility: Section Fade */
+      .section-fade {
+        background: linear-gradient(180deg, 
+          rgba(11, 7, 19, 0.0) 0%,
+          rgba(11, 7, 19, 0.4) 100%
+        );
+      }
+
+      /* Utility: Text Colors */
+      .text-main { color: var(--text-main); }
+      .text-body { color: var(--text-body); }
+      .text-muted-custom { color: var(--text-muted); }
+      .border-subtle { border-color: var(--border-subtle); }
     </style>
   <script type="importmap">
 {

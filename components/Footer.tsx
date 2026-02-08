@@ -1,14 +1,93 @@
-import React from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Linkedin, Twitter, Mail, MapPin } from 'lucide-react';
 import { NAV_ITEMS } from '../constants';
 import { Button } from './Button';
-import { LogoIcon } from './Navbar'; // Import the shared logo icon
+import { LogoIcon } from './Navbar';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+// Register ScrollTrigger plugin ONCE
+gsap.registerPlugin(ScrollTrigger);
 
 export const Footer: React.FC = () => {
+  // Exactly two refs as required
+  const footerRef = useRef<HTMLElement>(null);
+  const wordRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const footer = footerRef.current;
+    const word = wordRef.current;
+
+    if (!footer || !word) return;
+
+    // Create GSAP context for cleanup
+    const ctx = gsap.context(() => {
+      // Set initial position - word starts below
+      gsap.set(word, { yPercent: 50 });
+
+      // Create ONE pinned ScrollTrigger
+      gsap.to(word, {
+        yPercent: 0,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: footer,
+          start: 'top bottom',
+          end: 'bottom bottom+=1000',
+          pin: true,
+          pinSpacing: true,
+          scrub: 1,
+          anticipatePin: 1,
+          // markers: true, // Uncomment for debugging
+        },
+      });
+    }, footer);
+
+    // Cleanup on unmount
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <footer className="bg-black border-t border-white/10 pt-24 pb-12">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
+    <footer
+      ref={footerRef}
+      className="relative overflow-hidden bg-black text-white min-h-[100vh]"
+    >
+      {/* ============================================ */}
+      {/* B) Wordmark Layer - absolute z-0 behind     */}
+      {/* ============================================ */}
+      <div className="absolute inset-x-0 bottom-[10vh] z-0 pointer-events-none flex items-center justify-center gap-6">
+        <div
+          ref={wordRef}
+          className="flex items-center justify-center gap-6 will-change-transform"
+        >
+          {/* Logo Icon */}
+          <div className="text-white/20" style={{ width: 'clamp(80px, 12vw, 200px)', height: 'clamp(80px, 12vw, 200px)' }}>
+            <LogoIcon className="w-full h-full" />
+          </div>
+          {/* AIRA Text */}
+          <span
+            className="font-serif italic font-bold text-white/20 whitespace-nowrap leading-none tracking-tight"
+            style={{
+              fontSize: 'clamp(96px, 18vw, 320px)',
+            }}
+          >
+            AIRA
+          </span>
+        </div>
+      </div>
+
+      {/* Bottom gradient mask - word emerges from here */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-48 z-[1] pointer-events-none"
+        style={{
+          background: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.95) 30%, transparent 100%)',
+        }}
+      />
+
+      {/* ============================================ */}
+      {/* A) Top Content Layer - relative z-10        */}
+      {/* ============================================ */}
+      <div className="relative z-10 max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 pt-24 pb-12">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-20">
 
           {/* Brand Column */}

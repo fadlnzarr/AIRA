@@ -10,8 +10,6 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "@react-three/drei": "^9.122.0",
-    "@react-three/fiber": "^8.18.0",
     "@splinetool/react-spline": "2.2.6",
     "@splinetool/runtime": "1.0.55",
     "cors": "^2.8.5",
@@ -19,12 +17,12 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.2.1",
     "framer-motion": "11.0.8",
+    "gsap": "^3.14.2",
     "helmet": "^8.1.0",
     "lucide-react": "0.344.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-router-dom": "6.22.3",
-    "three": "^0.182.0",
     "zod": "^4.3.5"
   },
   "devDependencies": {

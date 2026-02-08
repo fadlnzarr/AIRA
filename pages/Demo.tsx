@@ -183,7 +183,7 @@ export const Demo: React.FC = () => {
     };
 
     return (
-        <div className="pt-32 pb-20 min-h-screen bg-black">
+        <div className="pt-32 pb-20 min-h-screen">
             <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
                 {/* Main Header */}
                 <AnimatedSection className="mb-20 text-left">
