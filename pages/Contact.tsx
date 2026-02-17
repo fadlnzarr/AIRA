@@ -1,131 +1,34 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { AnimatedSection } from '../components/AnimatedSection';
 import { Button } from '../components/Button';
-import { Send, Phone, Mail, Calendar, Clock, Loader2 } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Mail, MessageSquare, Phone, Send, Loader2, CheckCircle, Calendar as CalendarIcon } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { MetallicScrollBackground } from '../components/ui/metallic-scroll-background';
+import { DatePickerModal } from '../components/ui/DatePickerModal';
+import { format } from 'date-fns';
 
-interface BookingState {
-    bookingDate?: string;
-    bookingTime?: string;
-}
+import { api } from '../src/lib/api';
 
 export const Contact: React.FC = () => {
     const location = useLocation();
-    const navigate = useNavigate();
-    const state = location.state as BookingState | null;
-    const { bookingDate: preBookingDate, bookingTime: preBookingTime } = state || {};
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const { bookingDate, bookingTime } = location.state || {}; // Get passed data
 
     const [formState, setFormState] = useState({
         name: '',
-        business: '',
         email: '',
+        company: '',
         phone: '',
         industry: '',
         message: '',
-        requestedDate: ''
+        date: bookingDate ? new Date(bookingDate) : undefined as Date | undefined,
+        time: bookingTime || ''
     });
 
-    // Handle Pre-filled Data
-    useEffect(() => {
-        if (preBookingDate && preBookingTime) {
-            const dateStr = new Date(preBookingDate).toLocaleDateString(undefined, {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            const msg = `I would like to confirm my appointment for ${dateStr} at ${preBookingTime}.`;
-            setFormState(prev => ({ ...prev, message: msg }));
-        }
-    }, [preBookingDate, preBookingTime]);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
-
-        // Logic to determine final date and time values to send
-        let finalDate = preBookingDate;
-        let finalTime = preBookingTime;
-
-        // New: Clean string formats for n8n (no timezone conversion)
-        let dateStr = '';  // YYYY-MM-DD
-        let timeStr = '';  // HH:MM (24-hour)
-
-        if (!finalDate && formState.requestedDate) {
-            const dateObj = new Date(formState.requestedDate);
-            finalDate = dateObj.toISOString();
-            finalTime = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            // Extract clean date string
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            dateStr = `${year}-${month}-${day}`;
-
-            // Extract clean time string (24-hour)
-            const hours = String(dateObj.getHours()).padStart(2, '0');
-            const minutes = String(dateObj.getMinutes()).padStart(2, '0');
-            timeStr = `${hours}:${minutes}`;
-        } else if (finalDate) {
-            // From Demo page - extract date part
-            const dateObj = new Date(finalDate);
-            const year = dateObj.getFullYear();
-            const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-            const day = String(dateObj.getDate()).padStart(2, '0');
-            dateStr = `${year}-${month}-${day}`;
-            timeStr = finalTime || '';
-        }
-
-        const payload = {
-            appointmentDate: finalDate || new Date().toISOString(),
-            appointmentTime: finalTime || "Unspecified",
-            appointmentDateStr: dateStr || undefined,
-            appointmentTimeStr: timeStr || undefined,
-            plan: "Custom",
-            fullName: formState.name,
-            businessName: formState.business,
-            email: formState.email,
-            phone: formState.phone,
-            industry: formState.industry,
-            missionBrief: formState.message
-        };
-
-        try {
-            const response = await fetch('/api/book-appointment', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(payload),
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                // Navigate to confirmation page with booking data
-                navigate('/booking-confirmed', {
-                    state: {
-                        fullName: formState.name,
-                        businessName: formState.business,
-                        email: formState.email,
-                        appointmentDate: finalDate || new Date().toISOString(),
-                        appointmentTime: finalTime || "Unspecified"
-                    },
-                    replace: true
-                });
-            } else {
-                console.error("Server Error:", data);
-                alert("Submission Error: " + (data.message || "Please check your inputs and try again."));
-            }
-        } catch (error) {
-            console.error("Network Error:", error);
-            alert("Connection Failed. Please ensure the backend server is running on port 3001.");
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(false);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormState({
@@ -134,187 +37,324 @@ export const Contact: React.FC = () => {
         });
     };
 
-    const formatDateForDisplay = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    const handleDateSelect = (date: Date, time: string) => {
+        setFormState({
+            ...formState,
+            date,
+            time
+        });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setErrorMessage(null);
+
+        try {
+            // Construct ISO date from date and time strings
+            // Date is already a Date object in state now
+
+            if (!formState.date || !formState.time) {
+                throw new Error("Please select both a date and time.");
+            }
+
+            await api.post('/api/book-appointment', {
+                fullName: formState.name,
+                email: formState.email,
+                businessName: formState.company,
+                phone: formState.phone,
+                industry: formState.industry,
+                missionBrief: formState.message,
+                appointmentDate: formState.date.toISOString(),
+                appointmentTime: formState.time,
+            });
+
+            setIsSuccess(true);
+            setFormState({ name: '', email: '', company: '', phone: '', industry: '', message: '', date: undefined, time: '' });
+        } catch (error: any) {
+            console.error("Submission failed:", error);
+            setErrorMessage(error.message || "Failed to submit. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
-        <div className="pt-32 pb-20 min-h-screen">
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-24">
+        <div className="min-h-screen overflow-hidden">
+            <MetallicScrollBackground>
+                <div className="pt-32 pb-20">
+                    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+                            {/* Contact Info */}
+                            <div>
+                                <AnimatedSection>
+                                    <h1
+                                        className="text-5xl md:text-7xl font-serif italic font-light leading-none mb-8"
+                                        style={{ color: 'var(--metallic-text)' }}
+                                    >
+                                        Let's Build <br />
+                                        <span className="font-sans font-bold not-italic">Something Real.</span>
+                                    </h1>
+                                    <p
+                                        className="text-xl leading-relaxed mb-12"
+                                        style={{ color: 'var(--metallic-muted)' }}
+                                    >
+                                        Ready to automate your voice operations? <br />
+                                        Our team is ready to architect your solution.
+                                    </p>
+                                </AnimatedSection>
 
-                    <AnimatedSection>
-                        <h1 className="text-6xl md:text-8xl font-serif italic font-light text-white mb-12">Initiate <br /> Protocol.</h1>
-                        <p className="text-xl text-white/60 mb-16 font-sans max-w-md">
-                            Ready to reclaim your time? Fill out the form, and our automation architects will be in touch within 24 hours.
-                        </p>
-
-                        <div className="space-y-12">
-                            <div className="flex items-start gap-6 group cursor-pointer">
-                                <div className="w-12 h-12 border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:bg-white group-hover:text-black transition-colors">
-                                    <Phone className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h3 className="text-white font-serif italic text-2xl mb-1">Call Us</h3>
-                                    <p className="text-white/60 font-sans">+1 (437) 268-3706</p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-6 group cursor-pointer">
-                                <div className="w-12 h-12 border border-white/20 flex items-center justify-center flex-shrink-0 group-hover:bg-white group-hover:text-black transition-colors">
-                                    <Mail className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h3 className="text-white font-serif italic text-2xl mb-1">Email Us</h3>
-                                    <p className="text-white/60 font-sans">contact@aira.agency</p>
-                                </div>
-                            </div>
-                        </div>
-                    </AnimatedSection>
-
-                    <AnimatedSection delay={0.2}>
-                        <form onSubmit={handleSubmit} className="space-y-8">
-
-                            {/* Unified Session Configuration Card */}
-                            <div className="bg-white/5 border border-white/20 p-8 rounded-lg relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[50px] pointer-events-none"></div>
-
-                                <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
-                                    <div className="text-xs font-bold uppercase tracking-widest text-white/40 font-sans">Session Configuration</div>
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${preBookingDate ? 'bg-green-500 shadow-[0_0_10px_#22c55e]' : 'bg-blue-500 shadow-[0_0_10px_#3b82f6]'}`}></div>
-                                        <span className="text-xs font-sans font-bold text-white/40 uppercase">{preBookingDate ? 'Reserved' : 'Configuring'}</span>
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 gap-8">
-                                    {/* Time Selector / Display */}
-                                    <div className="space-y-2">
-                                        <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white/40 font-sans">
-                                            <Calendar className="w-3 h-3" /> {preBookingDate ? 'Confirmed Time' : 'Preferred Time'}
-                                        </label>
-
-                                        {preBookingDate && preBookingTime ? (
-                                            // Display Mode (From Demo)
-                                            <div className="flex items-center gap-6 py-3 border-b border-white/20">
-                                                <div className="flex items-center gap-2 text-white">
-                                                    <span className="font-serif italic text-2xl">
-                                                        {formatDateForDisplay(preBookingDate)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2 text-white/60">
-                                                    <Clock className="w-4 h-4" />
-                                                    <span className="font-sans text-lg">{preBookingTime}</span>
-                                                </div>
+                                <div className="space-y-8">
+                                    <AnimatedSection delay={0.2}>
+                                        <div className="flex items-start gap-6 group">
+                                            <div
+                                                className="w-12 h-12 rounded-full border flex items-center justify-center transition-colors duration-300 group-hover:bg-white group-hover:text-black"
+                                                style={{ borderColor: 'var(--metallic-border)', color: 'var(--metallic-text)' }}
+                                            >
+                                                <Mail className="w-5 h-5" />
                                             </div>
-                                        ) : (
-                                            // Input Mode (Direct)
-                                            <div className="relative">
+                                            <div>
+                                                <h3
+                                                    className="font-serif italic text-xl mb-1"
+                                                    style={{ color: 'var(--metallic-text)' }}
+                                                >
+                                                    Email Us
+                                                </h3>
+                                                <p
+                                                    className="font-sans"
+                                                    style={{ color: 'var(--metallic-muted)' }}
+                                                >
+                                                    hello@aira.agency
+                                                </p>
+                                                <p
+                                                    className="font-sans text-sm mt-1"
+                                                    style={{ color: 'var(--metallic-muted)' }}
+                                                >
+                                                    For general inquiries and partnerships.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </AnimatedSection>
+
+
+                                </div>
+                            </div>
+
+                            {/* Contact Form */}
+                            <AnimatedSection delay={0.4}>
+                                <div
+                                    className="p-8 md:p-10 rounded-3xl backdrop-blur-xl border relative overflow-hidden"
+                                    style={{
+                                        backgroundColor: 'rgba(255,255,255,0.02)',
+                                        borderColor: 'var(--metallic-border)'
+                                    }}
+                                >
+                                    {/* Pre-filled booking info notice */}
+
+                                    {/* Pre-filled booking info notice */}
+                                    {bookingDate && (
+                                        <div className="mb-8 p-4 bg-white/5 border border-white/10 rounded-xl flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shrink-0">
+                                                <CheckCircle className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-white text-sm font-bold">Completing Booking</p>
+                                                <p className="text-white/60 text-xs">
+                                                    For {new Date(bookingDate).toLocaleDateString()} at {bookingTime}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label
+                                                    className="text-xs font-bold uppercase tracking-wider ml-1"
+                                                    style={{ color: 'var(--metallic-muted)' }}
+                                                >
+                                                    Name
+                                                </label>
                                                 <input
-                                                    type="datetime-local"
-                                                    name="requestedDate"
+                                                    type="text"
+                                                    name="name"
+                                                    required
+                                                    value={formState.name}
                                                     onChange={handleChange}
-                                                    className="w-full bg-transparent border-b border-white/20 py-3 text-white font-serif italic text-xl focus:outline-none focus:border-white transition-colors placeholder:text-white/20"
-                                                    style={{ colorScheme: 'dark' }}
+                                                    className="w-full bg-white/5 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/20 transition-all font-sans"
+                                                    style={{ borderColor: 'var(--metallic-border)', color: 'var(--metallic-text)' }}
+                                                    placeholder="John Doe"
                                                 />
                                             </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label
+                                                className="text-xs font-bold uppercase tracking-wider ml-1"
+                                                style={{ color: 'var(--metallic-muted)' }}
+                                            >
+                                                Company
+                                            </label>
+                                            <input
+                                                type="text"
+                                                name="company"
+                                                value={formState.company}
+                                                onChange={handleChange}
+                                                className="w-full bg-white/5 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/20 transition-all font-sans"
+                                                style={{ borderColor: 'var(--metallic-border)', color: 'var(--metallic-text)' }}
+                                                placeholder="Acme Inc."
+                                            />
+                                        </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-white/40 font-sans">Full Name</label>
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        required
-                                        value={formState.name}
-                                        className="w-full bg-transparent border-b border-white/20 py-4 text-white font-serif italic text-xl focus:outline-none focus:border-white transition-colors placeholder:text-white/20"
-                                        placeholder="John Doe"
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-white/40 font-sans">Business</label>
-                                    <input
-                                        type="text"
-                                        name="business"
-                                        required
-                                        value={formState.business}
-                                        className="w-full bg-transparent border-b border-white/20 py-4 text-white font-serif italic text-xl focus:outline-none focus:border-white transition-colors placeholder:text-white/20"
-                                        placeholder="Company Ltd."
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-white/40 font-sans">Email</label>
-                                    <input
-                                        type="email"
-                                        name="email"
-                                        required
-                                        value={formState.email}
-                                        className="w-full bg-transparent border-b border-white/20 py-4 text-white font-serif italic text-xl focus:outline-none focus:border-white transition-colors placeholder:text-white/20"
-                                        placeholder="john@company.com"
-                                        onChange={handleChange}
-                                    />
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label
+                                                    className="text-xs font-bold uppercase tracking-wider ml-1"
+                                                    style={{ color: 'var(--metallic-muted)' }}
+                                                >
+                                                    Phone
+                                                </label>
+                                                <input
+                                                    type="tel"
+                                                    name="phone"
+                                                    value={formState.phone}
+                                                    onChange={handleChange}
+                                                    className="w-full bg-white/5 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/20 transition-all font-sans"
+                                                    style={{ borderColor: 'var(--metallic-border)', color: 'var(--metallic-text)' }}
+                                                    placeholder="+1 (555) 000-0000"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label
+                                                    className="text-xs font-bold uppercase tracking-wider ml-1"
+                                                    style={{ color: 'var(--metallic-muted)' }}
+                                                >
+                                                    Industry
+                                                </label>
+                                                <select
+                                                    name="industry"
+                                                    value={formState.industry}
+                                                    onChange={handleChange}
+                                                    className="w-full bg-white/5 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/20 transition-all font-sans appearance-none"
+                                                    style={{ borderColor: 'var(--metallic-border)', color: 'var(--metallic-text)' }}
+                                                >
+                                                    <option value="" disabled>Select Industry</option>
+                                                    <option value="Real Estate">Real Estate</option>
+                                                    <option value="Healthcare">Healthcare</option>
+                                                    <option value="Legal">Legal</option>
+                                                    <option value="Home Services">Home Services</option>
+                                                    <option value="Recruitment">Recruitment</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label
+                                                className="text-xs font-bold uppercase tracking-wider ml-1"
+                                                style={{ color: 'var(--metallic-muted)' }}
+                                            >
+                                                Requested Date & Time
+                                            </label>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsDatePickerOpen(true)}
+                                                className="w-full bg-white/5 border rounded-xl px-4 py-3 text-left outline-none focus:ring-2 focus:ring-white/20 transition-all font-sans flex items-center justify-between group/btn"
+                                                style={{ borderColor: 'var(--metallic-border)', color: 'var(--metallic-text)' }}
+                                            >
+                                                <span className={!formState.date ? 'text-white/50' : ''}>
+                                                    {formState.date && formState.time
+                                                        ? `${format(formState.date, 'MMM do, yyyy')} at ${formState.time}`
+                                                        : 'Select a Date & Time'}
+                                                </span>
+                                                <CalendarIcon className="w-5 h-5 opacity-50 group-hover/btn:opacity-100 transition-opacity" />
+                                            </button>
+                                        </div>
+
+                                        <DatePickerModal
+                                            isOpen={isDatePickerOpen}
+                                            onClose={() => setIsDatePickerOpen(false)}
+                                            onSelect={handleDateSelect}
+                                            initialDate={formState.date}
+                                            initialTime={formState.time}
+                                        />
+
+                                        <div className="space-y-2">
+                                            <label
+                                                className="text-xs font-bold uppercase tracking-wider ml-1"
+                                                style={{ color: 'var(--metallic-muted)' }}
+                                            >
+                                                Email
+                                            </label>
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                required
+                                                value={formState.email}
+                                                onChange={handleChange}
+                                                className="w-full bg-white/5 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/20 transition-all font-sans"
+                                                style={{ borderColor: 'var(--metallic-border)', color: 'var(--metallic-text)' }}
+                                                placeholder="john@example.com"
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label
+                                                className="text-xs font-bold uppercase tracking-wider ml-1"
+                                                style={{ color: 'var(--metallic-muted)' }}
+                                            >
+                                                Message
+                                            </label>
+                                            <textarea
+                                                name="message"
+                                                required
+                                                rows={4}
+                                                value={formState.message}
+                                                onChange={handleChange}
+                                                className="w-full bg-white/5 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-white/20 transition-all font-sans resize-none"
+                                                style={{ borderColor: 'var(--metallic-border)', color: 'var(--metallic-text)' }}
+                                                placeholder="Tell us about your automation needs..."
+                                            />
+                                        </div>
+
+                                        <Button
+                                            variant="primary"
+                                            className="w-full py-4 text-base flex items-center justify-center gap-2 group"
+                                            disabled={isSubmitting || isSuccess}
+                                        >
+                                            {isSubmitting ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                                    Sending...
+                                                </>
+                                            ) : isSuccess ? (
+                                                <>
+                                                    <CheckCircle className="w-5 h-5" />
+                                                    Message Sent
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Send Message
+                                                    <Send className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                                </>
+                                            )}
+                                        </Button>
+                                    </form>
+
+                                    {errorMessage && (
+                                        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
+                                            {errorMessage}
+                                        </div>
+                                    )}
+
+                                    {/* Decorative background glow */}
+                                    <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-white/5 rounded-full blur-[80px] pointer-events-none"></div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-white/40 font-sans">Phone</label>
-                                    <input
-                                        type="tel"
-                                        name="phone"
-                                        required
-                                        value={formState.phone}
-                                        className="w-full bg-transparent border-b border-white/20 py-4 text-white font-serif italic text-xl focus:outline-none focus:border-white transition-colors placeholder:text-white/20"
-                                        placeholder="+1 (555) 000-0000"
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="block text-xs font-bold uppercase tracking-widest text-white/40 font-sans">Industry</label>
-                                <select
-                                    name="industry"
-                                    value={formState.industry}
-                                    className="w-full bg-transparent border-b border-white/20 py-4 text-white font-serif italic text-xl focus:outline-none focus:border-white transition-colors appearance-none"
-                                    onChange={handleChange}
-                                >
-                                    <option value="" className="bg-black">Select Industry</option>
-                                    <option value="Medical" className="bg-black">Medical / Healthcare</option>
-                                    <option value="Real Estate" className="bg-black">Real Estate</option>
-                                    <option value="Logistics" className="bg-black">Logistics / Transport</option>
-                                    <option value="Professional Services" className="bg-black">Professional Services</option>
-                                    <option value="Other" className="bg-black">Other</option>
-                                </select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="block text-xs font-bold uppercase tracking-widest text-white/40 font-sans">Mission Brief</label>
-                                <textarea
-                                    name="message"
-                                    rows={3}
-                                    value={formState.message}
-                                    className="w-full bg-transparent border-b border-white/20 py-4 text-white font-serif italic text-xl focus:outline-none focus:border-white transition-colors placeholder:text-white/20 resize-none"
-                                    placeholder="Describe your automation needs..."
-                                    onChange={handleChange}
-                                ></textarea>
-                            </div>
-
-                            <div className="pt-8">
-                                <Button type="submit" className="w-full md:w-auto" size="lg" disabled={isSubmitting} icon={isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}>
-                                    {isSubmitting ? 'Processing...' : (preBookingDate ? 'Confirm Appointment' : 'Send Message')}
-                                </Button>
-                            </div>
-                        </form>
-                    </AnimatedSection>
-                </div>
-            </div>
-        </div>
+                            </AnimatedSection>
+                        </div>
+                    </div>
+                </div >
+            </MetallicScrollBackground >
+        </div >
     );
 };

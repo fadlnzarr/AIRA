@@ -1,186 +1,126 @@
 import React, { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { AnimatedSection } from '../components/AnimatedSection';
 import { Button } from '../components/Button';
-import { CheckCircle, Calendar, Clock, User, Building, Mail, ArrowRight, Home } from 'lucide-react';
-import { motion } from 'framer-motion';
-
-interface BookingData {
-    fullName: string;
-    businessName: string;
-    email: string;
-    appointmentDate: string;
-    appointmentTime: string;
-}
+import { CheckCircle, Calendar, Clock, Home, ArrowRight, Download } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { MetallicScrollBackground } from '../components/ui/metallic-scroll-background';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use';
 
 export const BookingConfirmation: React.FC = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    const bookingData = location.state as BookingData | null;
+    const { width, height } = useWindowSize();
+    const { bookingDate, bookingTime } = location.state || {}; // Get passed data
 
-    // Redirect if accessed directly without booking data
-    useEffect(() => {
-        if (!bookingData) {
-            navigate('/', { replace: true });
-        }
-    }, [bookingData, navigate]);
+    // Default to today/now if no data passed (for testing)
+    const displayDate = bookingDate ? new Date(bookingDate) : new Date();
+    const displayTime = bookingTime || "10:00 AM";
 
-    // Don't render if no booking data
-    if (!bookingData) {
-        return null;
-    }
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString(undefined, {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    };
+    // Format date nicely
+    const formattedDate = displayDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
 
     return (
-        <div className="pt-32 pb-20 min-h-screen">
-            <div className="max-w-[1000px] mx-auto px-4 sm:px-8 lg:px-12">
-                <AnimatedSection className="text-center mb-16">
-                    {/* Success Icon */}
-                    <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{
-                            type: "spring",
-                            stiffness: 200,
-                            damping: 15,
-                            delay: 0.2
-                        }}
-                        className="inline-flex items-center justify-center w-24 h-24 border-2 border-white rounded-full mb-8"
-                    >
-                        <CheckCircle className="w-12 h-12 text-white" />
-                    </motion.div>
+        <div className="min-h-screen overflow-hidden">
+            <Confetti
+                width={width}
+                height={height}
+                recycle={false}
+                numberOfPieces={200}
+                gravity={0.15}
+                colors={['#ffffff', '#e5e5e5', '#a3a3a3', '#525252']}
+            />
 
-                    <h1 className="text-5xl md:text-7xl font-serif italic font-light text-white mb-6">
-                        Protocol Initiated.
-                    </h1>
-                    <p className="text-xl text-white/60 font-sans max-w-2xl mx-auto">
-                        Your consultation has been successfully scheduled. Our automation architects will be in touch within 24 hours.
-                    </p>
-                </AnimatedSection>
+            <MetallicScrollBackground>
+                <div className="pt-32 pb-20 flex flex-col items-center justify-center min-h-[80vh]">
+                    <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 lg:px-8 text-center">
 
-                {/* Booking Details Card */}
-                <AnimatedSection delay={0.3}>
-                    <div className="bg-white text-black p-8 md:p-12 shadow-2xl">
-                        <div className="flex items-center justify-between mb-8 border-b border-black/10 pb-4">
-                            <div className="text-xs font-bold uppercase tracking-widest text-black/40 font-sans">
-                                Booking Confirmation
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_#22c55e]"></div>
-                                <span className="text-xs font-sans font-bold text-black/40 uppercase">Confirmed</span>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            {/* Date & Time */}
-                            <div className="space-y-6">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-10 h-10 border border-black/20 flex items-center justify-center flex-shrink-0">
-                                        <Calendar className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-bold uppercase tracking-widest text-black/40 font-sans mb-1">Date</div>
-                                        <div className="text-xl font-serif italic">{formatDate(bookingData.appointmentDate)}</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-4">
-                                    <div className="w-10 h-10 border border-black/20 flex items-center justify-center flex-shrink-0">
-                                        <Clock className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-bold uppercase tracking-widest text-black/40 font-sans mb-1">Time</div>
-                                        <div className="text-xl font-serif italic">{bookingData.appointmentTime}</div>
-                                    </div>
+                        <AnimatedSection>
+                            <div className="mb-8 flex justify-center">
+                                <div className="w-24 h-24 rounded-full bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                                    <CheckCircle className="w-12 h-12 text-green-400" />
                                 </div>
                             </div>
 
-                            {/* Contact Info */}
-                            <div className="space-y-6">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-10 h-10 border border-black/20 flex items-center justify-center flex-shrink-0">
-                                        <User className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-bold uppercase tracking-widest text-black/40 font-sans mb-1">Name</div>
-                                        <div className="text-xl font-serif italic">{bookingData.fullName}</div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-4">
-                                    <div className="w-10 h-10 border border-black/20 flex items-center justify-center flex-shrink-0">
-                                        <Building className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <div className="text-xs font-bold uppercase tracking-widest text-black/40 font-sans mb-1">Business</div>
-                                        <div className="text-xl font-serif italic">{bookingData.businessName}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Email Confirmation Notice */}
-                        <div className="mt-8 pt-8 border-t border-black/10">
-                            <div className="flex items-center gap-4 text-black/60">
-                                <Mail className="w-5 h-5" />
-                                <p className="font-sans text-sm">
-                                    A confirmation email has been sent to <span className="font-bold text-black">{bookingData.email}</span>
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </AnimatedSection>
-
-                {/* What's Next Section */}
-                <AnimatedSection delay={0.5} className="mt-16">
-                    <h2 className="text-3xl font-serif italic font-light text-white mb-8 text-center">What Happens Next?</h2>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[
-                            { step: '01', title: 'Confirmation Email', desc: 'Check your inbox for meeting details and calendar invite.' },
-                            { step: '02', title: 'Pre-Call Brief', desc: 'Our team reviews your requirements before the consultation.' },
-                            { step: '03', title: 'Strategy Session', desc: 'We discuss your automation goals and create a custom roadmap.' }
-                        ].map((item, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.6 + i * 0.1 }}
-                                className="border border-white/10 p-6 hover:bg-white/5 transition-colors"
+                            <h1
+                                className="text-5xl md:text-7xl font-serif italic font-light leading-none mb-6"
+                                style={{ color: 'var(--metallic-text)' }}
                             >
-                                <div className="text-white/30 font-sans font-bold text-sm mb-3">{item.step}</div>
-                                <h3 className="text-white font-serif italic text-xl mb-2">{item.title}</h3>
-                                <p className="text-white/60 font-sans text-sm">{item.desc}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </AnimatedSection>
+                                Booking <br />
+                                <span className="font-sans font-bold not-italic">Confirmed.</span>
+                            </h1>
 
-                {/* Action Buttons */}
-                <AnimatedSection delay={0.7} className="mt-16 flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <Button
-                        onClick={() => navigate('/')}
-                        icon={<Home className="w-4 h-4" />}
-                    >
-                        Back to Home
-                    </Button>
-                    <Button
-                        variant="secondary"
-                        onClick={() => navigate('/demo')}
-                        icon={<ArrowRight className="w-4 h-4" />}
-                    >
-                        Explore Our Demos
-                    </Button>
-                </AnimatedSection>
-            </div>
+                            <p
+                                className="text-xl leading-relaxed mb-12"
+                                style={{ color: 'var(--metallic-muted)' }}
+                            >
+                                Your demo with AIRA has been scheduled. <br />
+                                A calendar invitation has been sent to your email.
+                            </p>
+                        </AnimatedSection>
+
+                        <AnimatedSection delay={0.2}>
+                            <div
+                                className="p-8 rounded-3xl backdrop-blur-xl border mb-12"
+                                style={{
+                                    backgroundColor: 'rgba(255,255,255,0.02)',
+                                    borderColor: 'var(--metallic-border)'
+                                }}
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div className="flex flex-col items-center p-4 rounded-2xl bg-white/5 border border-white/5">
+                                        <Calendar className="w-8 h-8 mb-3 opacity-70" style={{ color: 'var(--metallic-text)' }} />
+                                        <span className="text-xs uppercase tracking-wider font-bold opacity-50 mb-1" style={{ color: 'var(--metallic-muted)' }}>Date</span>
+                                        <span className="text-lg font-medium" style={{ color: 'var(--metallic-text)' }}>{formattedDate}</span>
+                                    </div>
+                                    <div className="flex flex-col items-center p-4 rounded-2xl bg-white/5 border border-white/5">
+                                        <Clock className="w-8 h-8 mb-3 opacity-70" style={{ color: 'var(--metallic-text)' }} />
+                                        <span className="text-xs uppercase tracking-wider font-bold opacity-50 mb-1" style={{ color: 'var(--metallic-muted)' }}>Time</span>
+                                        <span className="text-lg font-medium" style={{ color: 'var(--metallic-text)' }}>{displayTime}</span>
+                                    </div>
+                                </div>
+
+                                <div className="mt-8 pt-8 border-t" style={{ borderColor: 'var(--metallic-border)' }}>
+                                    <button
+                                        className="flex items-center justify-center gap-2 mx-auto text-sm hover:underline transition-all"
+                                        style={{ color: 'var(--metallic-muted)' }}
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Add to Google Calendar
+                                    </button>
+                                </div>
+                            </div>
+                        </AnimatedSection>
+
+                        <AnimatedSection delay={0.4}>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <Button
+                                    variant="primary"
+                                    onClick={() => navigate('/')}
+                                    className="px-8 py-4 flex items-center justify-center gap-2"
+                                >
+                                    <Home className="w-4 h-4" />
+                                    Return Home
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => navigate('/how-it-works')}
+                                    className="px-8 py-4 flex items-center justify-center gap-2"
+                                >
+                                    Prepare for your Call
+                                    <ArrowRight className="w-4 h-4" />
+                                </Button>
+                            </div>
+                        </AnimatedSection>
+
+                    </div>
+                </div>
+            </MetallicScrollBackground>
         </div>
     );
 };

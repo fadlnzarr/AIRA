@@ -22,7 +22,6 @@ export const CALENDLY_URL = "https://calendly.com/";
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Home', path: '/' },
-  { label: 'Solutions', path: '/solutions' },
   { label: 'How It Works', path: '/how-it-works' },
   { label: 'Demo', path: '/demo' },
   { label: 'About', path: '/about' },

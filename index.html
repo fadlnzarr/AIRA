@@ -1,162 +1,128 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="https://lucide.dev/logo.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AIRA | AI Voice Automation</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400;1,6..96,500;1,6..96,600;1,6..96,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              serif: ['Bodoni Moda', 'serif'],
-            },
-            colors: {
-              dark: {
-                950: '#000000',
-                900: '#0A0A0A',
-                800: '#121212',
-              }
-            },
-            backgroundImage: {
-              'grid-pattern': "linear-gradient(to right, #222 1px, transparent 1px), linear-gradient(to bottom, #222 1px, transparent 1px)",
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="https://lucide.dev/logo.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIRA | AI Voice Automation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;1,6..96,400;1,6..96,500;1,6..96,600;1,6..96,700&family=Inter:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Bodoni Moda', 'serif'],
+          },
+          colors: {
+            dark: {
+              950: '#000000',
+              900: '#0A0A0A',
+              800: '#121212',
             }
+          },
+          backgroundImage: {
+            'grid-pattern': "linear-gradient(to right, #222 1px, transparent 1px), linear-gradient(to bottom, #222 1px, transparent 1px)",
           }
         }
       }
-    </script>
-    <style>
-      /* Brand Spectrum Color Variables */
-      :root {
-        --bg-0: #0B0713;
-        --bg-1: #160A2B;
-        --bg-2: #2A0F5C;
-        --bg-3: #5B2DFF;
-        --bg-lavender: #9B8CFF;
-        --text-main: rgba(255,255,255,0.92);
-        --text-body: rgba(255,255,255,0.78);
-        --text-muted: rgba(255,255,255,0.55);
-        --border-subtle: rgba(255,255,255,0.08);
-      }
+    }
+  </script>
+  <style>
+    /* Brand Spectrum Color Variables - Light Mode (Matre Style) */
+    :root {
+      --bg-0: #000000;
+      /* Black */
+      --bg-1: #0A0A0A;
+      --accent-red: #d92514;
+      --text-main: #FFFFFF;
+      --text-body: rgba(255, 255, 255, 0.8);
+      --text-muted: rgba(255, 255, 255, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.1);
+    }
 
+    body {
+      background-color: var(--bg-0);
+      color: var(--text-main);
+      overflow-x: hidden;
+      cursor: none;
+      min-height: 100vh;
+    }
+
+    @media (max-width: 768px) {
       body {
-        background: linear-gradient(180deg,
-          var(--bg-3) 0%,
-          var(--bg-2) 28%,
-          var(--bg-1) 55%,
-          var(--bg-0) 100%
-        );
-        background-attachment: fixed;
-        color: #ffffff;
-        overflow-x: hidden;
-        cursor: none;
-        min-height: 100vh;
+        cursor: auto;
       }
-      
-      @media (max-width: 768px) {
-        body {
-          cursor: auto;
-        }
-      }
+    }
 
-      html {
-        scroll-behavior: smooth;
-      }
+    html {
+      scroll-behavior: smooth;
+    }
 
-      ::selection {
-        background: var(--bg-lavender);
-        color: var(--bg-0);
-      }
+    ::selection {
+      background: var(--accent-red);
+      color: #ffffff;
+    }
 
-      ::-webkit-scrollbar {
-        width: 6px;
-      }
-      ::-webkit-scrollbar-track {
-        background: var(--bg-0); 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: var(--bg-2); 
-        border-radius: 3px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: var(--bg-3); 
-      }
-      
-      .font-serif {
-        font-family: 'Bodoni Moda', serif;
-      }
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
 
-      /* Site Shell - enables pseudo-element overlays */
-      .site-shell {
-        position: relative;
-        isolation: isolate;
-      }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-0);
+    }
 
-      /* Vertical Luminance Bands Overlay */
-      .site-shell::before {
-        content: '';
-        position: fixed;
-        inset: 0;
-        z-index: -1;
-        pointer-events: none;
-        background: repeating-linear-gradient(
-          90deg,
-          transparent 0px,
-          transparent 120px,
-          rgba(155, 140, 255, 0.015) 120px,
-          rgba(155, 140, 255, 0.015) 122px,
-          transparent 122px,
-          transparent 280px,
-          rgba(91, 45, 255, 0.02) 280px,
-          rgba(91, 45, 255, 0.02) 283px,
-          transparent 283px,
-          transparent 400px
-        );
-        mix-blend-mode: soft-light;
-      }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+    }
 
-      /* Micro-Noise Texture Overlay */
-      .site-shell::after {
-        content: '';
-        position: fixed;
-        inset: 0;
-        z-index: -1;
-        pointer-events: none;
-        opacity: 0.035;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-        mix-blend-mode: overlay;
-      }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-red);
+    }
 
-      /* Utility: Glass Card */
-      .glass-card {
-        background: rgba(255, 255, 255, 0.04);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid var(--border-subtle);
-        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
-      }
+    .font-serif {
+      font-family: 'Bodoni Moda', serif;
+    }
 
-      /* Utility: Section Fade */
-      .section-fade {
-        background: linear-gradient(180deg, 
-          rgba(11, 7, 19, 0.0) 0%,
-          rgba(11, 7, 19, 0.4) 100%
-        );
-      }
+    /* Site Shell */
+    .site-shell {
+      position: relative;
+      isolation: isolate;
+    }
 
-      /* Utility: Text Colors */
-      .text-main { color: var(--text-main); }
-      .text-body { color: var(--text-body); }
-      .text-muted-custom { color: var(--text-muted); }
-      .border-subtle { border-color: var(--border-subtle); }
-    </style>
+    /* Utility: Glass Card (Dark) */
+    .glass-card {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Utility: Text Colors */
+    .text-main {
+      color: var(--text-main);
+    }
+
+    .text-body {
+      color: var(--text-body);
+    }
+
+    .text-muted-custom {
+      color: var(--text-muted);
+    }
+
+    .border-subtle {
+      border-color: var(--border-subtle);
+    }
+  </style>
   <script type="importmap">
 {
   "imports": {
@@ -179,10 +145,12 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+
 </html>

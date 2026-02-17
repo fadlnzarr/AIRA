@@ -1,15 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { AnimatedSection } from '../components/AnimatedSection';
-import { Play, Square, ChevronLeft, ChevronRight, ChevronDown, Clock, Check, Calendar as CalendarIcon, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/Button';
-
-const DEMO_TRACKS = [
-    { title: "Medical Appointment Booking", duration: "2:14", audioSrc: "/audio/Medical Appointment.mp3" },
-    { title: "Real Estate Qualification", duration: "1:45", audioSrc: "/audio/Real Estate Qualification.mp3" },
-    { title: "Restaurant Reservation", duration: "3:02", audioSrc: "/audio/Restaurant reservation.mp3" }
-];
+import { InteractiveHoverButton } from '../components/ui/interactive-hover-button';
+import { ChevronLeft, ChevronRight, Clock, Calendar as CalendarIcon, Loader2, CheckCircle, Phone } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { MetallicScrollBackground } from '../components/ui/metallic-scroll-background';
 
 const TIME_SLOTS = [
     "09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
@@ -22,6 +18,12 @@ const MONTH_NAMES = [
     "January", "February", "March", "April", "May", "June",
     "July", "August", "September", "October", "November", "December"
 ];
+
+const AUDIO_FILES = {
+    Healthcare: "/audio/Medical Appointment.mp3",
+    Property: "/audio/Real Estate Qualification.mp3",
+    Hospitality: "/audio/Restaurant reservation.mp3"
+};
 
 // Animation variants for the calendar slide effect
 const slideVariants = {
@@ -49,412 +51,539 @@ const slideVariants = {
 
 export const Demo: React.FC = () => {
     const navigate = useNavigate();
-    const [playingIndex, setPlayingIndex] = useState<number | null>(null);
     const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
     const audioRef = useRef<HTMLAudioElement | null>(null);
-
-    // Calendar State
-    const [viewDate, setViewDate] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [isPlaying, setIsPlaying] = useState<number | null>(null);
+    const isPlayingRef = useRef<number | null>(null); // Ref to track playing state in loop
+    const [date, setDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState<number | null>(null);
     const [selectedTime, setSelectedTime] = useState<string | null>(null);
-    const [isTimeDropdownOpen, setIsTimeDropdownOpen] = useState(false);
-
-    // Track direction for animation (-1 for prev, 1 for next)
     const [direction, setDirection] = useState(0);
+    const [isBooking, setIsBooking] = useState(false);
 
-    // Audio cleanup and event handlers
+    // Sync ref
     useEffect(() => {
-        return () => {
+        isPlayingRef.current = isPlaying;
+    }, [isPlaying]);
+
+    // Audio Visualization Refs
+    const audioContextRef = useRef<AudioContext | null>(null);
+    const analyserRef = useRef<AnalyserNode | null>(null);
+    const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+    const animationFrameRef = useRef<number | null>(null);
+    const visualizerBarsRef = useRef<(HTMLDivElement | null)[]>([]);
+
+    // Get current date info
+    const currentYear = date.getFullYear();
+    const currentMonth = date.getMonth();
+    const today = new Date();
+
+    // Initialize Audio Context on first user interaction
+    const initAudioContext = () => {
+        if (!audioContextRef.current) {
+            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            audioContextRef.current = new AudioContextClass();
+            analyserRef.current = audioContextRef.current.createAnalyser();
+            analyserRef.current.fftSize = 256; // Defines data resolution
+
             if (audioRef.current) {
-                audioRef.current.pause();
-                audioRef.current = null;
+                // Ensure we only create the source once
+                if (!sourceRef.current) {
+                    sourceRef.current = audioContextRef.current.createMediaElementSource(audioRef.current);
+                    sourceRef.current.connect(analyserRef.current);
+                    analyserRef.current.connect(audioContextRef.current.destination);
+                }
+            }
+        } else if (audioContextRef.current.state === 'suspended') {
+            audioContextRef.current.resume();
+        }
+    };
+
+    // Sync ref
+    useEffect(() => {
+        isPlayingRef.current = isPlaying;
+    }, [isPlaying]);
+
+    const updateVisualizer = () => {
+        if (!analyserRef.current || isPlayingRef.current === null) return;
+
+        const bufferLength = analyserRef.current.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
+        analyserRef.current.getByteFrequencyData(dataArray);
+
+        // Map frequency data to our 40 bars
+        const BARS_PER_CARD = 40;
+        const step = Math.floor(bufferLength / BARS_PER_CARD);
+        const currentIndex = isPlayingRef.current || 0;
+        const offset = currentIndex * BARS_PER_CARD;
+
+        for (let i = 0; i < BARS_PER_CARD; i++) {
+            const bar = visualizerBarsRef.current[offset + i];
+            if (bar) {
+                // Get average frequency for this bar's range
+                let value = 0;
+                for (let j = 0; j < step; j++) {
+                    value += dataArray[i * step + j];
+                }
+                value = value / step;
+
+                // Calculate height percentage (min 20%, max 100%)
+                const heightPercent = Math.max(20, (value / 255) * 100);
+
+                // Directly update specific bar style for performance
+                bar.style.height = `${heightPercent}%`;
+                bar.style.opacity = isPlaying !== null ? '1' : '0.3';
+            }
+        }
+
+        if (isPlayingRef.current !== null) {
+            animationFrameRef.current = requestAnimationFrame(updateVisualizer);
+        }
+    };
+
+    useEffect(() => {
+        if (isPlaying !== null) {
+            updateVisualizer();
+        } else {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+            }
+            // Reset bars when stopped
+            visualizerBarsRef.current.forEach(bar => {
+                if (bar) {
+                    bar.style.height = '20%';
+                    bar.style.opacity = '0.3';
+                }
+            });
+        }
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, []);
+    }, [isPlaying]);
 
-    // Handle audio time updates
-    useEffect(() => {
-        const audio = audioRef.current;
-        if (!audio) return;
+    const handleTimeUpdate = () => {
+        if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
+    };
 
-        const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
-        const handleLoadedMetadata = () => setDuration(audio.duration);
-        const handleEnded = () => {
-            setPlayingIndex(null);
-            setCurrentTime(0);
-        };
+    const handleLoadedMetadata = () => {
+        if (audioRef.current) setCurrentTime(0);
+    };
 
-        audio.addEventListener('timeupdate', handleTimeUpdate);
-        audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-        audio.addEventListener('ended', handleEnded);
+    const handleEnded = () => {
+        setIsPlaying(null);
+        setCurrentTime(0);
+    };
 
-        return () => {
-            audio.removeEventListener('timeupdate', handleTimeUpdate);
-            audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-            audio.removeEventListener('ended', handleEnded);
-        };
-    }, [playingIndex]);
+    const togglePlay = (index: number, category: string) => {
+        initAudioContext(); // Ensure context is ready
+
+        if (isPlaying === index) {
+            audioRef.current?.pause();
+            setIsPlaying(null);
+        } else {
+            if (audioRef.current) {
+                const audioSrc = AUDIO_FILES[category as keyof typeof AUDIO_FILES];
+                if (audioSrc && audioRef.current.src !== window.location.origin + audioSrc) {
+                    audioRef.current.src = audioSrc;
+                }
+                // Reset if switching tracks
+                if (isPlaying !== null && isPlaying !== index) {
+                    audioRef.current.currentTime = 0;
+                }
+
+                // Need a slight delay to ensure src allows play if just changed? usually fine.
+                // Actually if src changes, we might need to load.
+                // Let's just set src and play.
+                audioRef.current.play().catch(e => console.log("Audio play failed:", e));
+            }
+            setIsPlaying(index);
+        }
+    };
+
 
     // Calendar Logic
-    const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    const getDaysInMonth = (date: Date) => {
+        return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    };
 
     // Get day of week for the 1st of the month (0 = Mon, 6 = Sun)
     const getFirstDayOfMonth = (date: Date) => {
         const day = new Date(date.getFullYear(), date.getMonth(), 1).getDay();
-        return day === 0 ? 6 : day - 1;
+        return day === 0 ? 6 : day - 1; // Adjust so Monday is 0
     };
 
     const handlePrevMonth = () => {
         setDirection(-1);
-        setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1));
+        setDate(new Date(currentYear, currentMonth - 1, 1));
     };
 
     const handleNextMonth = () => {
         setDirection(1);
-        setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1));
+        setDate(new Date(currentYear, currentMonth + 1, 1));
     };
 
     const handleDateClick = (day: number) => {
-        const newDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
-        setSelectedDate(newDate);
-        // Reset time if date changes to ensure valid flow
-        if (selectedDate?.getTime() !== newDate.getTime()) {
-            setSelectedTime(null);
-            setIsTimeDropdownOpen(true); // Auto open time dropdown
-        }
+        // Prevent selecting past dates
+        const clickedDate = new Date(currentYear, currentMonth, day);
+        if (clickedDate < new Date(today.getFullYear(), today.getMonth(), today.getDate())) return;
+
+        setSelectedDate(day);
+        setSelectedTime(null); // Reset time when date changes
     };
 
     const handleTimeSelect = (time: string) => {
         setSelectedTime(time);
-        setIsTimeDropdownOpen(false);
     };
 
     const handleBookAppointment = () => {
-        if (selectedDate && selectedTime) {
+        if (!selectedDate || !selectedTime) return;
+
+        setIsBooking(true);
+        // Simulate API call
+        setTimeout(() => {
+            setIsBooking(false);
+            // Navigate to contact page with pre-filled data passed via state
+            const bookingDate = new Date(currentYear, currentMonth, selectedDate);
             navigate('/contact', {
                 state: {
-                    bookingDate: selectedDate.toISOString(),
+                    bookingDate: bookingDate.toISOString(),
                     bookingTime: selectedTime
                 }
             });
-        }
-    };
-
-    const togglePlay = (index: number) => {
-        // If clicking the same track that's playing, pause it
-        if (playingIndex === index) {
-            if (audioRef.current) {
-                audioRef.current.pause();
-            }
-            setPlayingIndex(null);
-            return;
-        }
-
-        // Stop any currently playing audio
-        if (audioRef.current) {
-            audioRef.current.pause();
-        }
-
-        // Create new audio and play
-        const track = DEMO_TRACKS[index];
-        audioRef.current = new Audio(track.audioSrc);
-        audioRef.current.play().catch(console.error);
-        setPlayingIndex(index);
-        setCurrentTime(0);
+        }, 1500);
     };
 
     // Format time as MM:SS
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
     };
 
-    const daysInMonth = getDaysInMonth(viewDate);
-    const startPadding = getFirstDayOfMonth(viewDate);
+    const daysInMonth = getDaysInMonth(date);
+    const firstDay = getFirstDayOfMonth(date);
 
     // Check if a day is selected
     const isSelected = (day: number) => {
-        return selectedDate &&
-            selectedDate.getDate() === day &&
-            selectedDate.getMonth() === viewDate.getMonth() &&
-            selectedDate.getFullYear() === viewDate.getFullYear();
+        return selectedDate === day &&
+            date.getMonth() === currentMonth &&
+            date.getFullYear() === currentYear;
+    };
+
+    // Check if a day is today
+    const isToday = (day: number) => {
+        return day === today.getDate() &&
+            currentMonth === today.getMonth() &&
+            currentYear === today.getFullYear();
+    };
+
+    // Check if a day is in the past
+    const isPast = (day: number) => {
+        const checkDate = new Date(currentYear, currentMonth, day);
+        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        return checkDate < todayDate;
     };
 
     return (
-        <div className="pt-32 pb-20 min-h-screen">
-            <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12">
-                {/* Main Header */}
-                <AnimatedSection className="mb-20 text-left">
-                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif italic font-light text-white mb-8 md:whitespace-nowrap">Audible Intelligence.</h1>
-                    <p className="text-xl text-white/60 font-sans max-w-3xl leading-relaxed">
-                        Listen to raw, unedited conversations. No scripts. No cuts. Just pure autonomous capability handling complex human ambiguity in real-time.
-                    </p>
-                </AnimatedSection>
+        <div className="min-h-screen overflow-hidden">
+            <MetallicScrollBackground>
+                <div className="pt-32 pb-20">
+                    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8">
+                        {/* Hidden Audio Element - crossOrigin removed for same-origin localhost */}
+                        <audio
+                            ref={audioRef}
+                            onTimeUpdate={handleTimeUpdate}
+                            onLoadedMetadata={handleLoadedMetadata}
+                            onEnded={handleEnded}
+                            className="hidden"
+                        />
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24">
-                    {/* Demo Audio List */}
-                    <AnimatedSection className="flex flex-col h-full pt-4">
-                        <div className="space-y-4">
-                            {DEMO_TRACKS.map((track, i) => {
-                                const isPlaying = playingIndex === i;
-                                return (
-                                    <motion.div
-                                        key={i}
-                                        layout
-                                        onClick={() => togglePlay(i)}
-                                        className={`border transition-all duration-500 cursor-pointer overflow-hidden ${isPlaying ? 'border-white bg-white/5' : 'border-white/10 hover:bg-white hover:text-black group'}`}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24">
+                            {/* Left Column: Audio Demos */}
+                            <div className="space-y-16">
+                                <AnimatedSection>
+                                    <h1
+                                        className="text-5xl md:text-7xl font-serif italic font-light leading-none mb-8"
+                                        style={{ color: 'var(--metallic-text)' }}
                                     >
-                                        <motion.div layout className="flex items-center gap-6 p-6">
-                                            <div className={`font-sans font-bold text-sm ${isPlaying ? 'text-white' : 'group-hover:text-black'}`}>0{i + 1}</div>
-                                            <div className="text-left flex-grow">
-                                                <div className={`text-lg font-serif italic ${isPlaying ? 'text-white' : 'group-hover:text-black'}`}>{track.title}</div>
-                                            </div>
-                                            <div className={`w-8 h-8 flex items-center justify-center border rounded-full transition-colors ${isPlaying ? 'border-white text-white' : 'border-current group-hover:bg-black group-hover:text-white group-hover:border-black'}`}>
-                                                {isPlaying ? <Square className="w-3 h-3 fill-current" /> : <Play className="w-3 h-3 fill-current" />}
-                                            </div>
-                                        </motion.div>
+                                        Hear the <br />
+                                        <span className="font-sans font-bold not-italic">Difference.</span>
+                                    </h1>
+                                    <p
+                                        className="text-xl leading-relaxed mb-12"
+                                        style={{ color: 'var(--metallic-muted)' }}
+                                    >
+                                        Listen to actual calls handled by AIRA agents. <br />
+                                        Indistinguishable from human staff.
+                                    </p>
+                                </AnimatedSection>
 
-                                        <AnimatePresence>
-                                            {isPlaying && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: "auto", opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    transition={{ duration: 0.3 }}
-                                                    className="px-6 pb-6"
-                                                >
-                                                    <div className="pt-4 border-t border-white/10">
-                                                        <div className="flex justify-between items-end mb-4">
-                                                            <span className="text-xs font-sans uppercase tracking-widest text-white/40">Audio Output</span>
-                                                            <span className="text-xs font-sans font-bold text-white">
-                                                                {formatTime(currentTime)} / {duration > 0 ? formatTime(duration) : track.duration}
-                                                            </span>
-                                                        </div>
-
-                                                        {/* Voice Waveform Visualizer */}
-                                                        <div className="h-32 flex items-center justify-center gap-1 w-full my-4">
-                                                            {[...Array(45)].map((_, barIndex) => (
-                                                                <motion.div
-                                                                    key={barIndex}
-                                                                    className="w-1.5 bg-white rounded-full flex-shrink-0"
-                                                                    initial={{ height: "10%" }}
-                                                                    animate={{
-                                                                        height: ["10%", `${Math.max(10, Math.random() * 100)}%`, "10%"]
-                                                                    }}
-                                                                    transition={{
-                                                                        duration: 0.3 + Math.random() * 0.2,
-                                                                        repeat: Infinity,
-                                                                        repeatType: "mirror",
-                                                                        ease: "easeInOut",
-                                                                        delay: Math.random() * 0.2
-                                                                    }}
-                                                                />
-                                                            ))}
-                                                        </div>
-
-                                                        {/* Progress Bar */}
-                                                        <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                                                            <motion.div
-                                                                className="h-full bg-white rounded-full"
-                                                                initial={{ width: "0%" }}
-                                                                animate={{ width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%" }}
-                                                                transition={{ duration: 0.1 }}
-                                                            />
-                                                        </div>
-
-                                                        <div className="flex justify-between items-center mt-6">
-                                                            <div className="text-xs text-white/30 font-sans tracking-wider uppercase">Now Playing</div>
-                                                        </div>
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </motion.div>
-                                );
-                            })}
-                        </div>
-                    </AnimatedSection>
-
-                    {/* Interactive Calendar Section */}
-                    <AnimatedSection delay={0.2} className="bg-white text-black min-h-[600px] p-8 md:p-12 flex flex-col h-full shadow-2xl relative overflow-visible">
-                        <div className="flex-grow flex flex-col">
-                            <h3 className="font-serif italic font-light text-4xl mb-2">Book Strategy Call</h3>
-                            <p className="text-black/60 mb-8 font-sans">Syncs with our real-time availability.</p>
-
-                            {/* Calendar Container */}
-                            <div className="w-full max-w-md mx-auto border border-black/10 p-6 bg-white shadow-lg space-y-6 z-10">
-
-                                {/* Header: Month/Year Nav */}
-                                <div className="flex justify-between items-center border-b border-black/10 pb-4">
-                                    <div className="font-serif italic text-2xl w-40">
-                                        <AnimatePresence mode="popLayout" custom={direction}>
-                                            <motion.div
-                                                key={viewDate.toISOString()}
-                                                initial={{ y: direction > 0 ? 20 : -20, opacity: 0 }}
-                                                animate={{ y: 0, opacity: 1 }}
-                                                exit={{ y: direction > 0 ? -20 : 20, opacity: 0 }}
-                                                transition={{ duration: 0.3 }}
+                                <div className="space-y-6">
+                                    {[
+                                        { title: "Medical Appointment", duration: "1:42", category: "Healthcare" },
+                                        { title: "Real Estate Inquiry", duration: "2:15", category: "Property" },
+                                        { title: "Restaurant Reservation", duration: "0:58", category: "Hospitality" }
+                                    ].map((demo, i) => (
+                                        <AnimatedSection key={i} delay={i * 0.1}>
+                                            <div
+                                                className={`group p-6 rounded-2xl transition-all duration-300 border ${isPlaying === i ? 'bg-white/5' : 'bg-white/5 hover:bg-white/10'}`}
+                                                style={{ borderColor: isPlaying === i ? 'var(--metallic-text)' : 'var(--metallic-border)' }}
                                             >
-                                                {MONTH_NAMES[viewDate.getMonth()]} <span className="font-sans font-bold not-italic text-lg ml-1">{viewDate.getFullYear()}</span>
-                                            </motion.div>
-                                        </AnimatePresence>
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <button
-                                            onClick={handlePrevMonth}
-                                            className="w-8 h-8 flex items-center justify-center border border-black/10 hover:bg-black hover:text-white transition-colors rounded-full"
-                                        >
-                                            <ChevronLeft className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={handleNextMonth}
-                                            className="w-8 h-8 flex items-center justify-center border border-black/10 hover:bg-black hover:text-white transition-colors rounded-full"
-                                        >
-                                            <ChevronRight className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Days Grid - Animated Transition */}
-                                <div className="space-y-2 overflow-hidden">
-                                    {/* Day Labels */}
-                                    <div className="grid grid-cols-7 gap-2 mb-2">
-                                        {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-                                            <div key={i} className="text-xs font-bold text-black/30 text-center uppercase tracking-wider">{d}</div>
-                                        ))}
-                                    </div>
-
-                                    {/* Animated Days Container */}
-                                    <div className="relative min-h-[220px]">
-                                        <AnimatePresence mode="popLayout" custom={direction}>
-                                            <motion.div
-                                                key={`${viewDate.getMonth()}-${viewDate.getFullYear()}`}
-                                                custom={direction}
-                                                variants={slideVariants}
-                                                initial="enter"
-                                                animate="center"
-                                                exit="exit"
-                                                transition={{
-                                                    x: { type: "spring", stiffness: 300, damping: 30 },
-                                                    opacity: { duration: 0.2 }
-                                                }}
-                                                className="grid grid-cols-7 gap-2 absolute w-full"
-                                            >
-                                                {/* Empty Slots */}
-                                                {[...Array(startPadding)].map((_, i) => (
-                                                    <div key={`empty-${i}`} className="aspect-square" />
-                                                ))}
-
-                                                {/* Actual Days */}
-                                                {[...Array(daysInMonth)].map((_, i) => {
-                                                    const day = i + 1;
-                                                    const selected = isSelected(day);
-                                                    return (
-                                                        <motion.button
-                                                            key={day}
-                                                            onClick={() => handleDateClick(day)}
-                                                            whileHover={{ scale: 1.1 }}
-                                                            whileTap={{ scale: 0.9 }}
-                                                            className={`relative aspect-square flex items-center justify-center text-sm font-sans transition-colors rounded-full z-0 ${selected ? 'text-white font-bold' : 'text-black/60 hover:bg-black/5'}`}
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div>
+                                                        <div
+                                                            className="text-xs font-bold uppercase tracking-wider mb-1"
+                                                            style={{ color: 'var(--metallic-muted)' }}
                                                         >
-                                                            {selected && (
-                                                                <motion.div
-                                                                    layoutId="selectedDay"
-                                                                    className="absolute inset-0 bg-black rounded-full z-[-1]"
-                                                                    initial={{ scale: 0.5, opacity: 0 }}
-                                                                    animate={{ scale: 1, opacity: 1 }}
-                                                                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                                                                />
-                                                            )}
-                                                            {day}
-                                                        </motion.button>
-                                                    );
-                                                })}
-                                            </motion.div>
-                                        </AnimatePresence>
-                                    </div>
-                                </div>
-
-                                {/* Time Selection & Booking Action */}
-                                <div className="pt-4 border-t border-black/10 relative">
-                                    <label className="block text-xs font-bold uppercase tracking-widest text-black/40 mb-2">Available Time</label>
-
-                                    <div className="space-y-4">
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setIsTimeDropdownOpen(!isTimeDropdownOpen)}
-                                                className="w-full border border-black/20 p-3 flex justify-between items-center bg-white hover:border-black transition-colors"
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <Clock className="w-4 h-4 text-black/40" />
-                                                    <span className={`font-sans ${selectedTime ? 'text-black font-bold' : 'text-black/40'}`}>
-                                                        {selectedTime || "Select a time"}
-                                                    </span>
-                                                </div>
-                                                <motion.div
-                                                    animate={{ rotate: isTimeDropdownOpen ? 180 : 0 }}
-                                                >
-                                                    <ChevronDown className="w-4 h-4 text-black/40" />
-                                                </motion.div>
-                                            </button>
-
-                                            <AnimatePresence>
-                                                {isTimeDropdownOpen && (
-                                                    <motion.div
-                                                        initial={{ height: 0, opacity: 0, y: -10 }}
-                                                        animate={{ height: "auto", opacity: 1, y: 0 }}
-                                                        exit={{ height: 0, opacity: 0, y: -10 }}
-                                                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                                        className="absolute top-full left-0 right-0 mt-2 bg-white border border-black/10 shadow-2xl overflow-hidden z-50 max-h-[200px] overflow-y-auto"
+                                                            {demo.category}
+                                                        </div>
+                                                        <h3
+                                                            className="text-xl font-serif italic"
+                                                            style={{ color: 'var(--metallic-text)' }}
+                                                        >
+                                                            {demo.title}
+                                                        </h3>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => togglePlay(i, demo.category)}
+                                                        className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 transition-transform duration-300"
                                                     >
-                                                        <div className="p-2 grid grid-cols-2 gap-1">
-                                                            {TIME_SLOTS.map((time, index) => (
-                                                                <motion.button
-                                                                    key={time}
-                                                                    initial={{ opacity: 0, x: -10 }}
-                                                                    animate={{ opacity: 1, x: 0 }}
-                                                                    transition={{ delay: index * 0.03 }}
-                                                                    onClick={() => handleTimeSelect(time)}
-                                                                    className={`p-2 text-sm text-left hover:bg-black hover:text-white transition-colors flex items-center justify-between group ${selectedTime === time ? 'bg-black text-white' : 'text-black/60'}`}
-                                                                >
-                                                                    <span>{time}</span>
-                                                                    {selectedTime === time && <Check className="w-3 h-3" />}
-                                                                </motion.button>
+                                                        {isPlaying === i ? (
+                                                            <div className="flex gap-1">
+                                                                <div className="w-1 h-3 bg-black"></div>
+                                                                <div className="w-1 h-3 bg-black"></div>
+                                                            </div>
+                                                        ) : (
+                                                            <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                                                <path d="M8 5v14l11-7z" />
+                                                            </svg>
+                                                        )}
+                                                    </button>
+                                                </div>
+
+                                                {/* Audio Waveform Visualization */}
+                                                <div className="relative h-12 flex items-center gap-0.5 overflow-hidden">
+                                                    {Array.from({ length: 40 }).map((_, barIndex) => (
+                                                        <div
+                                                            key={barIndex}
+                                                            ref={el => visualizerBarsRef.current[i * 40 + barIndex] = el}
+                                                            className="w-1.5 rounded-full transition-[height] duration-75 ease-linear will-change-transform"
+                                                            style={{
+                                                                height: '20%',
+                                                                backgroundColor: isPlaying === i ? 'var(--metallic-text)' : 'var(--metallic-muted)',
+                                                                opacity: 0.3 // Controlled by visualizer loop
+                                                            }}
+                                                        />
+                                                    ))}
+                                                </div>
+
+                                                <div
+                                                    className="flex justify-between text-xs font-mono mt-3"
+                                                    style={{ color: 'var(--metallic-muted)' }}
+                                                >
+                                                    <span>{isPlaying === i ? formatTime(currentTime) : "0:00"}</span>
+                                                    <span>{demo.duration}</span>
+                                                </div>
+                                            </div>
+                                        </AnimatedSection>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Right Column: Interactive Booking Calendar */}
+                            <div className="relative">
+                                {/* ... (Calendar code remains same as before) ... */}
+                                <AnimatedSection delay={0.2}>
+                                    <div
+                                        className="rounded-3xl p-8 backdrop-blur-xl border relative overflow-hidden"
+                                        style={{
+                                            backgroundColor: 'rgba(0,0,0,0.2)',
+                                            borderColor: 'var(--metallic-border)'
+                                        }}
+                                    >
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[80px] -mr-32 -mt-32 pointer-events-none"></div>
+
+                                        <div className="relative z-10">
+                                            <div className="flex items-center justify-between mb-8">
+                                                <h3
+                                                    className="text-2xl font-serif italic"
+                                                    style={{ color: 'var(--metallic-text)' }}
+                                                >
+                                                    Book a Demo
+                                                </h3>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={handlePrevMonth}
+                                                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                                        style={{ color: 'var(--metallic-text)' }}
+                                                    >
+                                                        <ChevronLeft className="w-5 h-5" />
+                                                    </button>
+                                                    <div
+                                                        className="font-sans font-bold w-32 text-center"
+                                                        style={{ color: 'var(--metallic-text)' }}
+                                                    >
+                                                        {MONTH_NAMES[currentMonth]} {currentYear}
+                                                    </div>
+                                                    <button
+                                                        onClick={handleNextMonth}
+                                                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                                                        style={{ color: 'var(--metallic-text)' }}
+                                                    >
+                                                        <ChevronRight className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Calendar Grid */}
+                                            <div className="mb-8">
+                                                <div className="grid grid-cols-7 mb-4">
+                                                    {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map(day => (
+                                                        <div
+                                                            key={day}
+                                                            className="text-center text-xs font-bold uppercase tracking-wider h-8 flex items-center justify-center"
+                                                            style={{ color: 'var(--metallic-muted)' }}
+                                                        >
+                                                            {day}
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <div className="relative h-[280px]">
+                                                    <AnimatePresence initial={false} custom={direction}>
+                                                        <motion.div
+                                                            key={currentMonth}
+                                                            custom={direction}
+                                                            variants={slideVariants}
+                                                            initial="enter"
+                                                            animate="center"
+                                                            exit="exit"
+                                                            transition={{
+                                                                x: { type: "spring", stiffness: 300, damping: 30 },
+                                                                opacity: { duration: 0.2 }
+                                                            }}
+                                                            className="grid grid-cols-7 gap-y-2 absolute w-full"
+                                                        >
+                                                            {/* Empty cells for start of month */}
+                                                            {Array.from({ length: firstDay }).map((_, i) => (
+                                                                <div key={`empty-${i}`} className="h-10 md:h-12" />
                                                             ))}
+
+                                                            {/* Days */}
+                                                            {Array.from({ length: daysInMonth }).map((_, i) => {
+                                                                const day = i + 1;
+                                                                const selected = isSelected(day);
+                                                                const today = isToday(day);
+                                                                const past = isPast(day);
+
+                                                                return (
+                                                                    <div key={day} className="h-10 md:h-12 flex items-center justify-center relative group">
+                                                                        <button
+                                                                            onClick={() => handleDateClick(day)}
+                                                                            disabled={past}
+                                                                            className={`
+                                                                            w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-sm transition-all duration-300 relative z-10
+                                                                            ${selected
+                                                                                    ? 'bg-white text-black font-bold scale-110 shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+                                                                                    : past
+                                                                                        ? 'cursor-not-allowed'
+                                                                                        : 'hover:bg-white/10'
+                                                                                }
+                                                                            ${today && !selected ? 'border border-white/30' : ''}
+                                                                        `}
+                                                                            style={selected ? {} : (past ? { color: 'var(--metallic-muted)', opacity: 0.3 } : { color: 'var(--metallic-text)' })}
+                                                                        >
+                                                                            {day}
+                                                                            {today && !selected && (
+                                                                                <div className="absolute -bottom-1 w-1 h-1 bg-white rounded-full"></div>
+                                                                            )}
+                                                                        </button>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </motion.div>
+                                                    </AnimatePresence>
+                                                </div>
+                                            </div>
+
+                                            {/* Time Selection - Only shows when date is selected */}
+                                            <AnimatePresence>
+                                                {selectedDate && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                                                        className="overflow-hidden"
+                                                    >
+                                                        <div
+                                                            className="pt-6 mt-2 border-t"
+                                                            style={{ borderColor: 'var(--metallic-border)' }}
+                                                        >
+                                                            <div className="flex items-center gap-2 mb-4">
+                                                                <Clock
+                                                                    className="w-4 h-4"
+                                                                    style={{ color: 'var(--metallic-text)' }}
+                                                                />
+                                                                <span
+                                                                    className="text-sm font-bold uppercase tracking-wider"
+                                                                    style={{ color: 'var(--metallic-text)' }}
+                                                                >
+                                                                    Available Times
+                                                                </span>
+                                                            </div>
+                                                            <div className="grid grid-cols-4 gap-2 mb-8">
+                                                                {TIME_SLOTS.map((time) => (
+                                                                    <button
+                                                                        key={time}
+                                                                        onClick={() => handleTimeSelect(time)}
+                                                                        className={`
+                                                                        px-2 py-2 rounded-lg text-xs font-medium transition-all duration-200 border
+                                                                        ${selectedTime === time
+                                                                                ? 'bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.2)]'
+                                                                                : 'bg-transparent hover:bg-white/10'
+                                                                            }
+                                                                    `}
+                                                                        style={selectedTime === time ? {} : { color: 'var(--metallic-text)', borderColor: 'var(--metallic-border)' }}
+                                                                    >
+                                                                        {time}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+
+                                                            <div className="">
+                                                                <Button
+                                                                    variant="primary"
+                                                                    className={`w-full py-4 text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ${selectedTime ? 'opacity-100' : 'opacity-50 cursor-not-allowed'}`}
+                                                                    disabled={!selectedTime || isBooking}
+                                                                    onClick={handleBookAppointment}
+                                                                >
+                                                                    {isBooking ? (
+                                                                        <>
+                                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                                            Checking Availability...
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            Confirm Selection <CheckCircle className="w-4 h-4" />
+                                                                        </>
+                                                                    )}
+                                                                </Button>
+                                                            </div>
                                                         </div>
                                                     </motion.div>
                                                 )}
                                             </AnimatePresence>
                                         </div>
-
-                                        <AnimatePresence>
-                                            {selectedDate && selectedTime && (
-                                                <motion.div
-                                                    initial={{ opacity: 0, y: 10, height: 0 }}
-                                                    animate={{ opacity: 1, y: 0, height: 'auto' }}
-                                                    exit={{ opacity: 0, y: 10, height: 0 }}
-                                                >
-                                                    <Button
-                                                        variant="secondary"
-                                                        className="w-full justify-between group"
-                                                        onClick={handleBookAppointment}
-                                                    >
-                                                        <span>Confirm Booking</span>
-                                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                                    </Button>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
                                     </div>
-                                </div>
-
+                                </AnimatedSection>
                             </div>
                         </div>
-                    </AnimatedSection>
+                    </div>
                 </div>
-            </div>
+            </MetallicScrollBackground>
         </div>
     );
 };

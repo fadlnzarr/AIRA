@@ -61,12 +61,12 @@ export const Footer: React.FC = () => {
           className="flex items-center justify-center gap-6 will-change-transform"
         >
           {/* Logo Icon */}
-          <div className="text-white/20" style={{ width: 'clamp(80px, 12vw, 200px)', height: 'clamp(80px, 12vw, 200px)' }}>
+          <div className="text-white/10" style={{ width: 'clamp(80px, 12vw, 200px)', height: 'clamp(80px, 12vw, 200px)' }}>
             <LogoIcon className="w-full h-full" />
           </div>
           {/* AIRA Text */}
           <span
-            className="font-serif italic font-bold text-white/20 whitespace-nowrap leading-none tracking-tight"
+            className="font-serif italic font-bold text-white/10 whitespace-nowrap leading-none tracking-tight"
             style={{
               fontSize: 'clamp(96px, 18vw, 320px)',
             }}
@@ -80,7 +80,7 @@ export const Footer: React.FC = () => {
       <div
         className="absolute inset-x-0 bottom-0 h-48 z-[1] pointer-events-none"
         style={{
-          background: 'linear-gradient(to top, black 0%, rgba(0,0,0,0.95) 30%, transparent 100%)',
+          background: 'linear-gradient(to top, #000000 0%, rgba(0, 0, 0, 0.95) 30%, transparent 100%)',
         }}
       />
 
