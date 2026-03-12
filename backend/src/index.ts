@@ -34,7 +34,7 @@ app.use('/api', limiter);
 
 // --- Validation Schemas ---
 const bookingSchema = z.object({
-  appointmentDate: z.string().datetime(),
+  appointmentDate: z.string(),
   appointmentTime: z.string(),
   plan: z.string().optional(),
   fullName: z.string().min(1, "Name is required"),
@@ -44,6 +44,9 @@ const bookingSchema = z.object({
   industry: z.string().optional(),
   missionBrief: z.string().optional(),
 });
+
+// n8n Webhook URL
+const N8N_WEBHOOK_URL = 'https://ntest.app.n8n.cloud/webhook/465d7588-db02-4e0b-a872-3b880c3ea3b7';
 
 // --- Routes ---
 
@@ -71,6 +74,16 @@ app.post('/api/book-appointment', async (req: Request, res: Response) => {
     });
 
     console.log(`[BOOKING] New booking from ${booking.email}`);
+
+    // Send booking data to n8n webhook (server-side, no CORS issues)
+    fetch(N8N_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+      .then(() => console.log('[WEBHOOK] n8n webhook called successfully'))
+      .catch((err) => console.warn('[WEBHOOK] n8n webhook failed:', err.message));
+
     res.status(201).json({ success: true, id: booking.id });
   } catch (error: any) {
     console.error('Booking Error:', error);

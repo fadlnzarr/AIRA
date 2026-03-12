@@ -141,6 +141,7 @@ export const About: React.FC = () => {
                     <motion.div className="flex flex-col items-center text-center relative max-w-4xl mx-auto">
                         <motion.div className="space-y-12 relative z-10 w-full">
                             {/* Title */}
+                            {/* @ts-ignore */}
                             <motion.h2
                                 variants={simpleFadeUpVariants}
                                 className="text-sm font-sans font-bold uppercase tracking-[0.3em] mb-12 text-center"
