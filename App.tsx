@@ -9,6 +9,7 @@ import { Demo } from './pages/Demo';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { BookingConfirmation } from './pages/BookingConfirmation';
+import { ClientIntake } from './pages/ClientIntake';
 import { CustomCursor } from './components/CustomCursor';
 import { PageTransition } from './components/PageTransition';
 import { CounterPreloader } from './components/ui/counter-preloader';
@@ -73,6 +74,7 @@ const AppContent = () => {
                 <Route path="/about" element={<PageTransition><About /></PageTransition>} />
                 <Route path="/contact" element={<PageTransition><Contact /></PageTransition>} />
                 <Route path="/booking-confirmed" element={<PageTransition><BookingConfirmation /></PageTransition>} />
+                <Route path="/client-intake" element={<PageTransition><ClientIntake /></PageTransition>} />
               </Routes>
             </AnimatePresence>
           </main>
