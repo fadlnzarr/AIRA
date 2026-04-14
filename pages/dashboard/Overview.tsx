@@ -4,9 +4,14 @@ import { GlassMetricCard } from '../../components/dashboard/overview/GlassMetric
 import { TrendChart } from '../../components/dashboard/overview/TrendChart';
 import { FunnelChart } from '../../components/dashboard/overview/FunnelChart';
 import { SystemStatus } from '../../components/dashboard/overview/SystemStatus';
-import { Phone, Users, CheckCircle, Clock, Activity, BarChart2 } from 'lucide-react';
+import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
+import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
+import { fetchDashboardStats } from '../../src/lib/googleSheets';
+import { Phone, Users, CheckCircle, Clock, Activity, BarChart2, Calendar } from 'lucide-react';
 
 export const Overview: React.FC = () => {
+    const { data: stats, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchDashboardStats);
+
     // Light Ref for the metallic effect
     const lightRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -26,29 +31,32 @@ export const Overview: React.FC = () => {
 
     return (
         <div ref={containerRef} className="relative min-h-screen space-y-12 pb-20 overflow-hidden">
-            {/* Background removed (moved to DashboardLayout) */}
             {/* Header Section */}
             <div className="relative z-10 px-2 pt-4">
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.6 }}
+                    className="flex items-end justify-between"
                 >
-                    <h1 className="text-4xl font-light text-[#1A1A1A] tracking-tight mb-2">
-                        Dashboard
-                    </h1>
-                    <p className="text-[#1A1A1A]/60 text-sm max-w-md font-medium">
-                        Real-time AI performance monitoring and analytics.
-                    </p>
+                    <div>
+                        <h1 className="text-4xl font-light text-[#1A1A1A] tracking-tight mb-2">
+                            Dashboard
+                        </h1>
+                        <p className="text-[#1A1A1A]/60 text-sm max-w-md font-medium">
+                            Real-time AI performance monitoring and analytics.
+                        </p>
+                    </div>
+                    <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
                 </motion.div>
             </div>
 
-            {/* Section 1: Key Metrics (Scrollable/Grid) */}
+            {/* Section 1: Key Metrics */}
             <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <GlassMetricCard
                     label="Total Calls"
-                    value="1,245"
-                    change="+12.5%"
+                    value={stats ? String(stats.totalCalls) : '—'}
+                    change=""
                     trend="up"
                     icon={<Phone className="w-4 h-4" />}
                     delay={0.1}
@@ -56,26 +64,26 @@ export const Overview: React.FC = () => {
                 />
                 <GlassMetricCard
                     label="Active Leads"
-                    value="892"
-                    change="+3.2%"
+                    value={stats ? String(stats.activeLeads) : '—'}
+                    change=""
                     trend="up"
                     icon={<Users className="w-4 h-4" />}
                     delay={0.2}
                 />
                 <GlassMetricCard
-                    label="Conversion"
-                    value="24.8%"
-                    change="-1.1%"
-                    trend="down"
-                    icon={<Activity className="w-4 h-4" />}
+                    label="Appointments"
+                    value={stats ? String(stats.totalAppointments) : '—'}
+                    change=""
+                    trend="up"
+                    icon={<Calendar className="w-4 h-4" />}
                     delay={0.3}
                 />
                 <GlassMetricCard
-                    label="Avg Duration"
-                    value="4m 12s"
-                    change="+0.8%"
+                    label="Conversion"
+                    value={stats ? `${stats.conversionRate}%` : '—'}
+                    change=""
                     trend="up"
-                    icon={<Clock className="w-4 h-4" />}
+                    icon={<Activity className="w-4 h-4" />}
                     delay={0.4}
                 />
             </div>

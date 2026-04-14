@@ -1,65 +1,43 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { LeadsFilter } from '../../components/dashboard/leads/LeadsFilter';
+import { LeadsFilter, LeadsFilterState, DEFAULT_LEADS_FILTERS } from '../../components/dashboard/leads/LeadsFilter';
 import { LeadsTable, Lead } from '../../components/dashboard/leads/LeadsTable';
 import { LeadsDrawer } from '../../components/dashboard/leads/LeadsDrawer';
+import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
+import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
+import { fetchLeads } from '../../src/lib/googleSheets';
+import { Loader2 } from 'lucide-react';
 
-// Mock Data
-const MOCK_LEADS: Lead[] = [
-    {
-        id: '1',
-        name: 'Michael Chen',
-        email: 'm.chen@realtysolutions.com',
-        phone: '+1 (415) 555-0123',
-        service: 'Capture AI',
-        urgency: 'high',
-        status: 'new',
-        statusType: 'neutral', // New = Neutral usually, or blue
-        assignedTo: 'Sarah M.',
-        createdDate: 'Oct 31, 2:45 PM',
-        summary: 'Urgent request for AI receptionist deployment. Dealing with high volume of missed calls. Wants to start trial immediately.'
-    },
-    {
-        id: '2',
-        name: 'Emma Wilson',
-        email: 'emma.w@techstart.io',
-        phone: '+1 (555) 123-9876',
-        service: 'Support Gen',
-        urgency: 'medium',
-        status: 'contacted',
-        statusType: 'warning', // In progress/Contacted
-        assignedTo: 'James R.',
-        createdDate: 'Oct 30, 9:15 AM'
-    },
-    {
-        id: '3',
-        name: 'Robert Fox',
-        email: 'r.fox@logistics.net',
-        phone: '+1 (555) 456-7890',
-        service: 'Capture AI',
-        urgency: 'low',
-        status: 'qualified',
-        statusType: 'success',
-        assignedTo: 'Sarah M.',
-        createdDate: 'Oct 28, 4:20 PM'
-    },
-    {
-        id: '4',
-        name: 'Sarah Connor',
-        email: 's.connor@cyberdyne.co',
-        phone: '+1 (555) 999-0000',
-        service: 'Capture AI',
-        urgency: 'high',
-        status: 'closed',
-        statusType: 'success', // Won
-        assignedTo: 'Terminator T.',
-        createdDate: 'Oct 25, 11:00 AM'
-    },
-];
+function parseDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+}
 
 export const Leads: React.FC = () => {
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+    const [filters, setFilters] = useState<LeadsFilterState>(DEFAULT_LEADS_FILTERS);
+
+    const { data: leads, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchLeads);
+
+    const filteredLeads = useMemo(() => {
+        if (!leads) return [];
+        return leads.filter(lead => {
+            if (filters.status && lead.status !== filters.status) return false;
+            if (filters.urgency && lead.urgency !== filters.urgency) return false;
+            if (filters.search) {
+                const q = filters.search.toLowerCase();
+                const searchable = `${lead.name} ${lead.email} ${lead.phone} ${lead.summary || ''}`.toLowerCase();
+                if (!searchable.includes(q)) return false;
+            }
+            if (filters.dateRange.from && filters.dateRange.to) {
+                const d = parseDate(lead.createdDate);
+                if (d && (d < filters.dateRange.from || d > filters.dateRange.to)) return false;
+            }
+            return true;
+        });
+    }, [leads, filters]);
 
     return (
         <div className="space-y-6">
@@ -72,19 +50,27 @@ export const Leads: React.FC = () => {
                         Track, assign, and convert incoming leads.
                     </p>
                 </div>
+                <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
 
-            <LeadsFilter />
+            <LeadsFilter filters={filters} onFilterChange={setFilters} />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
             >
-                <LeadsTable
-                    leads={MOCK_LEADS}
-                    onRowClick={(lead) => setSelectedLead(lead)}
-                />
+                {loading && !leads ? (
+                    <div className="flex items-center justify-center py-20 text-[#1A1A1A]/40">
+                        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                        Loading leads...
+                    </div>
+                ) : (
+                    <LeadsTable
+                        leads={filteredLeads}
+                        onRowClick={(lead) => setSelectedLead(lead)}
+                    />
+                )}
             </motion.div>
 
             <LeadsDrawer

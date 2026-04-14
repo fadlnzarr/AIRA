@@ -1,12 +1,17 @@
 
 import React from 'react';
-import { Bell, Search, Calendar as CalendarIcon } from 'lucide-react';
+import { Bell, Calendar as CalendarIcon, Shield } from 'lucide-react';
+import { useAuth } from '../../src/lib/AuthContext';
 
 interface TopBarProps {
     title: string;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ title }) => {
+    const { user } = useAuth();
+
+    const roleBadge = user?.role === 'admin' ? 'Administrator' : 'Client';
+
     return (
         <header className="h-16 border-b border-[#1A1A1A]/5 bg-white/40 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-10 transition-colors duration-300">
             {/* Page Title */}
@@ -31,19 +36,24 @@ export const TopBar: React.FC<TopBarProps> = ({ title }) => {
 
                 <div className="flex items-center gap-3 pl-2">
                     <div className="text-right hidden md:block">
-                        <p className="text-sm text-[#1A1A1A] font-medium leading-none">Fadil Nizar</p>
-                        <p className="text-xs text-[#1A1A1A]/40 mt-1 leading-none">Administrator</p>
+                        <p className="text-sm text-[#1A1A1A] font-medium leading-none">{user?.displayName || 'User'}</p>
+                        <p className="text-xs text-[#1A1A1A]/40 mt-1 leading-none">{roleBadge}</p>
                     </div>
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#1A1A1A]/10 to-[#1A1A1A]/5 border border-[#1A1A1A]/10 flex items-center justify-center text-[#1A1A1A] font-serif italic text-sm overflow-hidden shadow-sm">
-                        <img
-                            src="/images/fadil-nizar-founder.jpg"
-                            alt="Profile"
-                            className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                        />
-                        <span className="absolute" style={{ display: 'none' }}>FN</span>
+                        {user?.role === 'admin' ? (
+                            <img
+                                src="/images/fadil-nizar-founder.jpg"
+                                alt="Profile"
+                                className="w-full h-full object-cover opacity-90 hover:opacity-100 transition-opacity"
+                                onError={(e) => {
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    (e.target as HTMLImageElement).nextElementSibling?.removeAttribute('style');
+                                }}
+                            />
+                        ) : null}
+                        <span className={user?.role === 'admin' ? 'hidden' : ''}>
+                            {user?.displayName?.charAt(0).toUpperCase() || 'U'}
+                        </span>
                     </div>
                 </div>
             </div>
