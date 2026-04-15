@@ -21,6 +21,17 @@ export const Calls: React.FC = () => {
 
     const { data: calls, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchCalls);
 
+    const outcomeCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        if (calls) {
+            calls.forEach(call => {
+                const outcome = call.outcome;
+                counts[outcome] = (counts[outcome] || 0) + 1;
+            });
+        }
+        return counts;
+    }, [calls]);
+
     const filteredCalls = useMemo(() => {
         if (!calls) return [];
         return calls.filter(call => {
@@ -52,7 +63,7 @@ export const Calls: React.FC = () => {
                 <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
 
-            <CallsFilter filters={filters} onFilterChange={setFilters} />
+            <CallsFilter filters={filters} onFilterChange={setFilters} outcomeCounts={outcomeCounts} />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}

@@ -21,6 +21,8 @@ export const DEFAULT_LEADS_FILTERS: LeadsFilterState = {
 interface LeadsFilterProps {
     filters: LeadsFilterState;
     onFilterChange: (filters: LeadsFilterState) => void;
+    statusCounts?: Record<string, number>;
+    urgencyCounts?: Record<string, number>;
 }
 
 const statusOptions = [
@@ -36,7 +38,7 @@ const urgencyOptions = [
     { value: 'low', label: 'Low', description: 'Non-urgent inquiry' },
 ];
 
-export const LeadsFilter: React.FC<LeadsFilterProps> = ({ filters, onFilterChange }) => {
+export const LeadsFilter: React.FC<LeadsFilterProps> = ({ filters, onFilterChange, statusCounts, urgencyCounts }) => {
     const update = (key: keyof LeadsFilterState, value: any) => {
         onFilterChange({ ...filters, [key]: value });
     };
@@ -58,7 +60,10 @@ export const LeadsFilter: React.FC<LeadsFilterProps> = ({ filters, onFilterChang
 
                 {/* Status Filter */}
                 <CustomDropdown
-                    options={statusOptions}
+                    options={statusOptions.map(opt => ({
+                        ...opt,
+                        label: statusCounts ? `${opt.label} (${statusCounts[opt.value] || 0})` : opt.label
+                    }))}
                     value={filters.status}
                     onChange={(v) => update('status', v)}
                     placeholder="All Statuses"
@@ -66,7 +71,10 @@ export const LeadsFilter: React.FC<LeadsFilterProps> = ({ filters, onFilterChang
 
                 {/* Urgency Filter */}
                 <CustomDropdown
-                    options={urgencyOptions}
+                    options={urgencyOptions.map(opt => ({
+                        ...opt,
+                        label: urgencyCounts ? `${opt.label} (${urgencyCounts[opt.value] || 0})` : opt.label
+                    }))}
                     value={filters.urgency}
                     onChange={(v) => update('urgency', v)}
                     placeholder="All Priorities"

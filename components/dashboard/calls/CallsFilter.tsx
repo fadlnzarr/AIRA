@@ -19,6 +19,7 @@ export const DEFAULT_CALLS_FILTERS: CallsFilterState = {
 interface CallsFilterProps {
     filters: CallsFilterState;
     onFilterChange: (filters: CallsFilterState) => void;
+    outcomeCounts?: Record<string, number>;
 }
 
 const outcomeOptions = [
@@ -28,7 +29,7 @@ const outcomeOptions = [
     { value: 'Follow Up', label: 'Follow Up', icon: <ArrowRight className="w-3 h-3" />, description: 'Warm lead, needs callback' },
 ];
 
-export const CallsFilter: React.FC<CallsFilterProps> = ({ filters, onFilterChange }) => {
+export const CallsFilter: React.FC<CallsFilterProps> = ({ filters, onFilterChange, outcomeCounts }) => {
     const update = (key: keyof CallsFilterState, value: any) => {
         onFilterChange({ ...filters, [key]: value });
     };
@@ -50,7 +51,10 @@ export const CallsFilter: React.FC<CallsFilterProps> = ({ filters, onFilterChang
 
                 {/* Outcome Filter */}
                 <CustomDropdown
-                    options={outcomeOptions}
+                    options={outcomeOptions.map(opt => ({
+                        ...opt,
+                        label: outcomeCounts ? `${opt.label} (${outcomeCounts[opt.value] || 0})` : opt.label
+                    }))}
                     value={filters.outcome}
                     onChange={(v) => update('outcome', v)}
                     placeholder="All Outcomes"

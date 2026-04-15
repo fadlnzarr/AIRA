@@ -23,6 +23,17 @@ export const Appointments: React.FC = () => {
 
     const { data: appointments, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchAppointments);
 
+    const statusCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        if (appointments) {
+            appointments.forEach(apt => {
+                const status = apt.status;
+                counts[status] = (counts[status] || 0) + 1;
+            });
+        }
+        return counts;
+    }, [appointments]);
+
     const filteredAppointments = useMemo(() => {
         if (!appointments) return [];
         return appointments.filter(apt => {
@@ -54,7 +65,7 @@ export const Appointments: React.FC = () => {
                 <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
 
-            <AppointmentsFilter view={view} onViewChange={setView} filters={filters} onFilterChange={setFilters} />
+            <AppointmentsFilter view={view} onViewChange={setView} filters={filters} onFilterChange={setFilters} statusCounts={statusCounts} />
 
             <motion.div
                 key={view}

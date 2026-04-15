@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, ArrowRight } from 'lucide-react';
+import { Menu, X, ArrowRight, LogIn, LayoutDashboard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_ITEMS } from '../constants';
 import { Button } from './Button';
+import { useAuth } from '../src/lib/AuthContext';
 
 // New "Audio Peak" Logo Design
 // Represents AI Voice (equalizer bars) forming an abstract 'A' shape
@@ -30,6 +31,7 @@ export const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -166,8 +168,39 @@ export const Navbar: React.FC = () => {
               ))}
             </motion.div>
 
-            {/* Menu Button - Always mounted, animate opacity/pointers */}
-            <div className="flex items-center justify-end">
+            {/* Right side: Sign In + Menu Button */}
+            <div className="flex items-center gap-3 flex-shrink-0">
+              {/* Sign In / Dashboard Button - Desktop, visible when not scrolled */}
+              <motion.button
+                className={`hidden md:flex items-center gap-2 px-5 py-2 rounded-full text-xs font-medium uppercase tracking-wider transition-all duration-300 ${
+                  isAuthenticated
+                    ? `${isDarkRoute ? 'bg-white/10 text-white hover:bg-white/20 border border-white/10' : 'bg-black/5 text-black hover:bg-black/10 border border-black/10'}`
+                    : 'bg-[#d92514] text-white hover:bg-[#b81f10] shadow-lg shadow-[#d92514]/25'
+                }`}
+                onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
+                animate={{
+                  opacity: scrolled ? 0 : 1,
+                  pointerEvents: scrolled ? 'none' : 'auto',
+                  scale: scrolled ? 0.8 : 1,
+                }}
+                transition={{ duration: 0.3 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isAuthenticated ? (
+                  <>
+                    <LayoutDashboard className="w-3.5 h-3.5" />
+                    Dashboard
+                  </>
+                ) : (
+                  <>
+                    <LogIn className="w-3.5 h-3.5" />
+                    Sign In
+                  </>
+                )}
+              </motion.button>
+
+              {/* Menu Button - Always mounted, animate opacity/pointers */}
               <motion.button
                 className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-300 ${isMenuOpen ? 'bg-[#d92514]/10 text-[#d92514]' : `hover:bg-[#d92514]/5 hover:text-[#d92514] ${textColor}`}`}
                 onClick={(e) => {
@@ -274,6 +307,42 @@ export const Navbar: React.FC = () => {
                     </motion.div>
                   ))}
                 </div>
+
+                {/* Sign In / Dashboard in dropdown */}
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{
+                    delay: 0.1 + NAV_ITEMS.length * 0.05,
+                    duration: 0.3,
+                    ease: 'easeOut',
+                  }}
+                  className="mt-4"
+                >
+                  <button
+                    onClick={() => {
+                      navigate(isAuthenticated ? '/dashboard' : '/login');
+                      setIsMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-3 text-2xl font-semibold transition-all duration-200 ${
+                      isAuthenticated
+                        ? `${menuTextMuted} ${isDarkRoute ? 'hover:text-white' : 'hover:text-black'} hover:translate-x-2`
+                        : 'text-[#d92514] hover:translate-x-2'
+                    }`}
+                  >
+                    {isAuthenticated ? (
+                      <>
+                        <LayoutDashboard className="w-6 h-6" />
+                        Dashboard
+                      </>
+                    ) : (
+                      <>
+                        <LogIn className="w-6 h-6" />
+                        Sign In
+                      </>
+                    )}
+                  </button>
+                </motion.div>
 
                 {/* Contact Section */}
                 <motion.div

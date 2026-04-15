@@ -21,6 +21,28 @@ export const Leads: React.FC = () => {
 
     const { data: leads, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchLeads);
 
+    const statusCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        if (leads) {
+            leads.forEach(lead => {
+                const status = lead.status;
+                counts[status] = (counts[status] || 0) + 1;
+            });
+        }
+        return counts;
+    }, [leads]);
+
+    const urgencyCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        if (leads) {
+            leads.forEach(lead => {
+                const urgency = lead.urgency;
+                counts[urgency] = (counts[urgency] || 0) + 1;
+            });
+        }
+        return counts;
+    }, [leads]);
+
     const filteredLeads = useMemo(() => {
         if (!leads) return [];
         return leads.filter(lead => {
@@ -53,7 +75,7 @@ export const Leads: React.FC = () => {
                 <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
 
-            <LeadsFilter filters={filters} onFilterChange={setFilters} />
+            <LeadsFilter filters={filters} onFilterChange={setFilters} statusCounts={statusCounts} urgencyCounts={urgencyCounts} />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}

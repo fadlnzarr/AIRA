@@ -21,6 +21,7 @@ interface AppointmentsFilterProps {
     onViewChange: (view: 'list' | 'calendar') => void;
     filters: AppointmentsFilterState;
     onFilterChange: (filters: AppointmentsFilterState) => void;
+    statusCounts?: Record<string, number>;
 }
 
 const statusOptions = [
@@ -30,7 +31,7 @@ const statusOptions = [
     { value: 'rescheduled', label: 'Rescheduled', icon: <RotateCcw className="w-3 h-3" /> },
 ];
 
-export const AppointmentsFilter: React.FC<AppointmentsFilterProps> = ({ view, onViewChange, filters, onFilterChange }) => {
+export const AppointmentsFilter: React.FC<AppointmentsFilterProps> = ({ view, onViewChange, filters, onFilterChange, statusCounts }) => {
     const update = (key: keyof AppointmentsFilterState, value: any) => {
         onFilterChange({ ...filters, [key]: value });
     };
@@ -70,7 +71,10 @@ export const AppointmentsFilter: React.FC<AppointmentsFilterProps> = ({ view, on
 
                 {/* Status Filter */}
                 <CustomDropdown
-                    options={statusOptions}
+                    options={statusOptions.map(opt => ({
+                        ...opt,
+                        label: statusCounts ? `${opt.label} (${statusCounts[opt.value] || 0})` : opt.label
+                    }))}
                     value={filters.status}
                     onChange={(v) => update('status', v)}
                     placeholder="All Statuses"
