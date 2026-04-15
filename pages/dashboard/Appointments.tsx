@@ -1,63 +1,55 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { AppointmentsFilter } from '../../components/dashboard/appointments/AppointmentsFilter';
+import { AppointmentsFilter, AppointmentsFilterState, DEFAULT_APPOINTMENTS_FILTERS } from '../../components/dashboard/appointments/AppointmentsFilter';
 import { AppointmentsList, Appointment } from '../../components/dashboard/appointments/AppointmentsList';
 import { AppointmentsCalendar } from '../../components/dashboard/appointments/AppointmentsCalendar';
 import { AppointmentDrawer } from '../../components/dashboard/appointments/AppointmentDrawer';
+import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
+import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
+import { fetchAppointments } from '../../src/lib/googleSheets';
+import { Loader2 } from 'lucide-react';
 
-// Mock Data
-const MOCK_APPOINTMENTS: Appointment[] = [
-    {
-        id: '1',
-        date: 'Nov 14, 2024',
-        time: '2:00 PM',
-        clientName: 'Alice Freeman',
-        service: 'Capture AI Demo',
-        staff: 'Fadil N.',
-        status: 'confirmed',
-        statusType: 'success',
-        source: 'ai',
-        notes: 'Client is very interested in the multi-lingual support.'
-    },
-    {
-        id: '2',
-        date: 'Nov 14, 2024',
-        time: '4:30 PM',
-        clientName: 'TechCorp Inc.',
-        service: 'Consultation',
-        staff: 'Sarah M.',
-        status: 'pending',
-        statusType: 'warning',
-        source: 'manual'
-    },
-    {
-        id: '3',
-        date: 'Nov 15, 2024',
-        time: '10:00 AM',
-        clientName: 'John Doe',
-        service: 'Troubleshooting',
-        staff: 'Support Team',
-        status: 'cancelled',
-        statusType: 'error',
-        source: 'ai'
-    },
-    {
-        id: '4',
-        date: 'Nov 16, 2024',
-        time: '1:00 PM',
-        clientName: 'Real Estate Pros',
-        service: 'Setup Call',
-        staff: 'Fadil N.',
-        status: 'confirmed',
-        statusType: 'success',
-        source: 'manual'
-    }
-];
+function parseDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+}
 
 export const Appointments: React.FC = () => {
     const [view, setView] = useState<'list' | 'calendar'>('list');
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+    const [filters, setFilters] = useState<AppointmentsFilterState>(DEFAULT_APPOINTMENTS_FILTERS);
+
+    const { data: appointments, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchAppointments);
+
+    const statusCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        if (appointments) {
+            appointments.forEach(apt => {
+                const status = apt.status;
+                counts[status] = (counts[status] || 0) + 1;
+            });
+        }
+        return counts;
+    }, [appointments]);
+
+    const filteredAppointments = useMemo(() => {
+        if (!appointments) return [];
+        return appointments.filter(apt => {
+            if (filters.status && apt.status !== filters.status) return false;
+            if (filters.search) {
+                const q = filters.search.toLowerCase();
+                const searchable = `${apt.clientName} ${apt.service} ${apt.staff} ${apt.date}`.toLowerCase();
+                if (!searchable.includes(q)) return false;
+            }
+            if (filters.dateRange.from && filters.dateRange.to) {
+                const d = parseDate(apt.date);
+                if (d && (d < filters.dateRange.from || d > filters.dateRange.to)) return false;
+            }
+            return true;
+        });
+    }, [appointments, filters]);
 
     return (
         <div className="space-y-6">
@@ -70,9 +62,10 @@ export const Appointments: React.FC = () => {
                         Manage your upcoming bookings and schedule.
                     </p>
                 </div>
+                <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
 
-            <AppointmentsFilter view={view} onViewChange={setView} />
+            <AppointmentsFilter view={view} onViewChange={setView} filters={filters} onFilterChange={setFilters} statusCounts={statusCounts} />
 
             <motion.div
                 key={view}
@@ -80,9 +73,14 @@ export const Appointments: React.FC = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
             >
-                {view === 'list' ? (
+                {loading && !appointments ? (
+                    <div className="flex items-center justify-center py-20 text-[#1A1A1A]/40">
+                        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                        Loading appointments...
+                    </div>
+                ) : view === 'list' ? (
                     <AppointmentsList
-                        appointments={MOCK_APPOINTMENTS}
+                        appointments={filteredAppointments}
                         onRowClick={(apt) => setSelectedAppointment(apt)}
                     />
                 ) : (

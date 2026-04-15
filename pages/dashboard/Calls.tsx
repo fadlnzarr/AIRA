@@ -1,76 +1,53 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { CallsFilter } from '../../components/dashboard/calls/CallsFilter';
+import { CallsFilter, CallsFilterState, DEFAULT_CALLS_FILTERS } from '../../components/dashboard/calls/CallsFilter';
 import { CallsTable, Call } from '../../components/dashboard/calls/CallsTable';
 import { CallDrawer } from '../../components/dashboard/calls/CallDrawer';
+import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
+import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
+import { fetchCalls } from '../../src/lib/googleSheets';
+import { Loader2 } from 'lucide-react';
 
-// Mock Data
-const MOCK_CALLS: Call[] = [
-    {
-        id: '1',
-        date: 'Oct 31',
-        time: '2:45 PM',
-        caller: '+1 (555) 123-4567',
-        intent: 'Book Demo',
-        outcome: 'Appointment Booked',
-        statusType: 'success',
-        duration: '04:15',
-        direction: 'inbound',
-        service: 'Capture AI'
-    },
-    {
-        id: '2',
-        date: 'Oct 31',
-        time: '1:12 PM',
-        caller: '+1 (555) 987-6543',
-        intent: 'Support Inquiry',
-        outcome: 'Escalated to Support',
-        statusType: 'warning',
-        duration: '02:30',
-        direction: 'inbound',
-        service: 'Support Gen'
-    },
-    {
-        id: '3',
-        date: 'Oct 30',
-        time: '11:20 AM',
-        caller: 'Unknown',
-        intent: 'Spam / Robocall',
-        outcome: 'Filtered',
-        statusType: 'error',
-        duration: '00:12',
-        direction: 'inbound',
-        service: 'Capture AI'
-    },
-    {
-        id: '4',
-        date: 'Oct 30',
-        time: '10:05 AM',
-        caller: '+1 (555) 444-2222',
-        intent: 'Pricing Question',
-        outcome: 'Lead Captured',
-        statusType: 'neutral',
-        duration: '03:45',
-        direction: 'inbound',
-        service: 'Capture AI'
-    },
-    {
-        id: '5',
-        date: 'Oct 29',
-        time: '4:55 PM',
-        caller: '+1 (555) 777-8888',
-        intent: 'Scheduling',
-        outcome: 'Appointment Booked',
-        statusType: 'success',
-        duration: '05:10',
-        direction: 'inbound',
-        service: 'Capture AI'
-    }
-];
+function parseDate(dateStr: string): Date | null {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
+}
 
 export const Calls: React.FC = () => {
     const [selectedCall, setSelectedCall] = useState<Call | null>(null);
+    const [filters, setFilters] = useState<CallsFilterState>(DEFAULT_CALLS_FILTERS);
+
+    const { data: calls, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchCalls);
+
+    const outcomeCounts = useMemo(() => {
+        const counts: Record<string, number> = {};
+        if (calls) {
+            calls.forEach(call => {
+                const outcome = call.outcome;
+                counts[outcome] = (counts[outcome] || 0) + 1;
+            });
+        }
+        return counts;
+    }, [calls]);
+
+    const filteredCalls = useMemo(() => {
+        if (!calls) return [];
+        return calls.filter(call => {
+            if (filters.outcome && call.outcome !== filters.outcome) return false;
+            if (filters.search) {
+                const q = filters.search.toLowerCase();
+                const searchable = `${call.caller} ${call.intent} ${call.outcome} ${call.date}`.toLowerCase();
+                if (!searchable.includes(q)) return false;
+            }
+            if (filters.dateRange.from && filters.dateRange.to) {
+                const d = parseDate(call.date);
+                if (d && (d < filters.dateRange.from || d > filters.dateRange.to)) return false;
+            }
+            return true;
+        });
+    }, [calls, filters]);
 
     return (
         <div className="space-y-6">
@@ -83,19 +60,27 @@ export const Calls: React.FC = () => {
                         View and manage your AI agent's conversations.
                     </p>
                 </div>
+                <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
 
-            <CallsFilter />
+            <CallsFilter filters={filters} onFilterChange={setFilters} outcomeCounts={outcomeCounts} />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
             >
-                <CallsTable
-                    calls={MOCK_CALLS}
-                    onRowClick={(call) => setSelectedCall(call)}
-                />
+                {loading && !calls ? (
+                    <div className="flex items-center justify-center py-20 text-[#1A1A1A]/40">
+                        <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                        Loading call logs...
+                    </div>
+                ) : (
+                    <CallsTable
+                        calls={filteredCalls}
+                        onRowClick={(call) => setSelectedCall(call)}
+                    />
+                )}
             </motion.div>
 
             <CallDrawer

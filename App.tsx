@@ -10,10 +10,13 @@ import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { BookingConfirmation } from './pages/BookingConfirmation';
 import { ClientIntake } from './pages/ClientIntake';
+import { Login } from './pages/Login';
 import { CustomCursor } from './components/CustomCursor';
 import { PageTransition } from './components/PageTransition';
 import { CounterPreloader } from './components/ui/counter-preloader';
 import { GrainBackground } from './components/ui/grain-background';
+import { AuthProvider } from './src/lib/AuthContext';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Dashboard Imports
 import { DashboardLayout } from './components/dashboard/DashboardLayout';
@@ -23,6 +26,7 @@ import { Leads } from './pages/dashboard/Leads';
 import { Appointments } from './pages/dashboard/Appointments';
 import { Settings } from './pages/dashboard/Settings';
 import { Support } from './pages/dashboard/Support';
+import { ClientManagement } from './pages/dashboard/ClientManagement';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -38,6 +42,7 @@ const AppContent = () => {
   const [isLoading, setIsLoading] = React.useState(true);
   const location = useLocation();
   const isDashboard = location.pathname.startsWith('/dashboard');
+  const isLogin = location.pathname === '/login';
 
   return (
     <>
@@ -47,23 +52,34 @@ const AppContent = () => {
       <CounterPreloader onLoadingComplete={() => setIsLoading(false)} />
 
       {!isLoading && (
-        <div className={!isDashboard ? "site-shell min-h-screen flex flex-col font-sans text-white selection:bg-[#d92514] selection:text-white animate-in fade-in duration-700" : ""}>
-          {!isDashboard && <GrainBackground />}
-          {!isDashboard && <Navbar />}
+        <div className={!isDashboard && !isLogin ? "site-shell min-h-screen flex flex-col font-sans text-white selection:bg-[#d92514] selection:text-white animate-in fade-in duration-700" : ""}>
+          {!isDashboard && !isLogin && <GrainBackground />}
+          {!isDashboard && !isLogin && <Navbar />}
 
-          <main className={!isDashboard ? "flex-grow" : ""}>
+          <main className={!isDashboard && !isLogin ? "flex-grow" : ""}>
             <AnimatePresence mode="wait">
-              <Routes location={location} key={location.pathname.split('/')[1]}> {/* Key on top-level segment to prevent re-animating nested routes deeply */}
-                {/* Dashboard Routes */}
-                <Route path="/dashboard" element={<DashboardLayout />}>
+              <Routes location={location} key={location.pathname.split('/')[1]}>
+                {/* Login Route */}
+                <Route path="/login" element={<Login />} />
+
+                {/* Dashboard Routes (Protected) */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }>
                   <Route index element={<Overview />} />
                   <Route path="overview" element={<Overview />} />
                   <Route path="calls" element={<Calls />} />
                   <Route path="leads" element={<Leads />} />
                   <Route path="appointments" element={<Appointments />} />
+                  <Route path="clients" element={
+                    <ProtectedRoute allowedRoles={['admin']}>
+                      <ClientManagement />
+                    </ProtectedRoute>
+                  } />
                   <Route path="settings" element={<Settings />} />
                   <Route path="support" element={<Support />} />
-                  {/* Add more dashboard sub-routes here as needed */}
                   <Route path="*" element={<Overview />} />
                 </Route>
 
@@ -79,7 +95,7 @@ const AppContent = () => {
             </AnimatePresence>
           </main>
 
-          {!isDashboard && <Footer />}
+          {!isDashboard && !isLogin && <Footer />}
         </div>
       )}
     </>
@@ -88,9 +104,11 @@ const AppContent = () => {
 
 const App: React.FC = () => {
   return (
-    <HashRouter>
-      <AppContent />
-    </HashRouter>
+    <AuthProvider>
+      <HashRouter>
+        <AppContent />
+      </HashRouter>
+    </AuthProvider>
   );
 };
 
