@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { AppointmentsFilter, AppointmentsFilterState, DEFAULT_APPOINTMENTS_FILTERS } from '../../components/dashboard/appointments/AppointmentsFilter';
 import { AppointmentsList, Appointment } from '../../components/dashboard/appointments/AppointmentsList';
@@ -8,6 +8,7 @@ import { AppointmentDrawer } from '../../components/dashboard/appointments/Appoi
 import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
 import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
 import { fetchAppointments } from '../../src/lib/googleSheets';
+import { useClientSheetId } from '../../src/lib/useClientSheetId';
 import { Loader2 } from 'lucide-react';
 
 function parseDate(dateStr: string): Date | null {
@@ -21,7 +22,9 @@ export const Appointments: React.FC = () => {
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [filters, setFilters] = useState<AppointmentsFilterState>(DEFAULT_APPOINTMENTS_FILTERS);
 
-    const { data: appointments, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchAppointments);
+    const sheetId = useClientSheetId();
+    const appointmentsFetcher = useCallback(() => fetchAppointments(sheetId), [sheetId]);
+    const { data: appointments, loading, error, lastUpdated, refresh } = useGoogleSheets(appointmentsFetcher, [sheetId]);
 
     const statusCounts = useMemo(() => {
         const counts: Record<string, number> = {};

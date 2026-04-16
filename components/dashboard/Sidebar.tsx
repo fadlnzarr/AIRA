@@ -12,7 +12,8 @@ import {
     ChevronRight,
     LogOut,
     UserPlus,
-    Shield
+    Shield,
+    Contact
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../src/lib/AuthContext';
@@ -32,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
         { icon: Phone, label: 'Calls', path: '/dashboard/calls' },
         { icon: Users, label: 'Leads', path: '/dashboard/leads' },
         { icon: Calendar, label: 'Appointments', path: '/dashboard/appointments' },
+        ...(!isAdmin ? [{ icon: Contact, label: 'Customers', path: '/dashboard/customers' }] : []),
         ...(isAdmin ? [{ icon: UserPlus, label: 'Clients', path: '/dashboard/clients' }] : []),
     ];
 

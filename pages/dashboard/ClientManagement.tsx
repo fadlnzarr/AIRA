@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth, ClientAccount } from '../../src/lib/AuthContext';
-import { UserPlus, Trash2, Users, X, Eye, EyeOff, AlertCircle, Check, User, Lock, Calendar } from 'lucide-react';
+import { UserPlus, Trash2, Users, X, Eye, EyeOff, AlertCircle, Check, User, Lock, Calendar, Link2 } from 'lucide-react';
 
 export const ClientManagement: React.FC = () => {
     const { clients, createClient, deleteClient } = useAuth();
@@ -10,6 +10,7 @@ export const ClientManagement: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [displayName, setDisplayName] = useState('');
+    const [spreadsheetUrl, setSpreadsheetUrl] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
@@ -19,12 +20,13 @@ export const ClientManagement: React.FC = () => {
         e.preventDefault();
         setError('');
         setSuccess('');
-        const result = createClient(username, password, displayName);
+        const result = createClient(username, password, displayName, spreadsheetUrl);
         if (result.success) {
             setSuccess(`Client "${displayName || username}" created successfully`);
             setUsername('');
             setPassword('');
             setDisplayName('');
+            setSpreadsheetUrl('');
             setTimeout(() => { setShowModal(false); setSuccess(''); }, 1200);
         } else {
             setError(result.error || 'Failed to create client');
@@ -71,6 +73,7 @@ export const ClientManagement: React.FC = () => {
                             <tr className="border-b border-[#1A1A1A]/5">
                                 <th className="text-left px-6 py-4 text-xs font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Client</th>
                                 <th className="text-left px-6 py-4 text-xs font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Username</th>
+                                <th className="text-left px-6 py-4 text-xs font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Spreadsheet</th>
                                 <th className="text-left px-6 py-4 text-xs font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Created</th>
                                 <th className="text-right px-6 py-4 text-xs font-semibold text-[#1A1A1A]/40 uppercase tracking-wider">Actions</th>
                             </tr>
@@ -94,6 +97,21 @@ export const ClientManagement: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <code className="text-xs bg-[#1A1A1A]/5 px-2 py-1 rounded-lg text-[#1A1A1A]/60">{client.username}</code>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        {client.spreadsheetUrl ? (
+                                            <a
+                                                href={client.spreadsheetUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 transition-colors bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100"
+                                            >
+                                                <Link2 className="w-3 h-3" />
+                                                View Sheet
+                                            </a>
+                                        ) : (
+                                            <span className="text-xs text-[#1A1A1A]/30">—</span>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 text-sm text-[#1A1A1A]/50">
                                         {new Date(client.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -210,6 +228,24 @@ export const ClientManagement: React.FC = () => {
                                     </div>
                                 </div>
 
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-[#1A1A1A]/40 uppercase tracking-wider">Google Spreadsheet URL</label>
+                                    <div className="relative">
+                                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#1A1A1A]/30" />
+                                        <input
+                                            type="url"
+                                            value={spreadsheetUrl}
+                                            onChange={(e) => setSpreadsheetUrl(e.target.value)}
+                                            placeholder="https://docs.google.com/spreadsheets/d/..."
+                                            className="w-full pl-10 pr-4 py-3 bg-[#1A1A1A]/5 border border-[#1A1A1A]/10 rounded-xl text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#1A1A1A]/20 transition-colors"
+                                            required
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-[#1A1A1A]/30 pl-1">
+                                        Paste the full URL of the client's dedicated Google Sheet. It must be published to web.
+                                    </p>
+                                </div>
+
                                 <AnimatePresence>
                                     {error && (
                                         <motion.div
@@ -237,7 +273,7 @@ export const ClientManagement: React.FC = () => {
 
                                 <button
                                     type="submit"
-                                    disabled={!username || !password}
+                                    disabled={!username || !password || !spreadsheetUrl}
                                     className="w-full py-3 bg-[#1A1A1A] text-white rounded-xl text-sm font-medium hover:bg-[#1A1A1A]/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                                 >
                                     Create Account

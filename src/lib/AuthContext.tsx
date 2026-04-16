@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
 // --- Types ---
 export type UserRole = 'admin' | 'client';
@@ -8,12 +8,14 @@ export interface User {
     username: string;
     role: UserRole;
     displayName: string;
+    spreadsheetUrl?: string;
 }
 
 export interface ClientAccount {
     username: string;
     password: string;
     displayName: string;
+    spreadsheetUrl: string;
     createdAt: string;
 }
 
@@ -23,7 +25,7 @@ interface AuthContextType {
     login: (username: string, password: string) => { success: boolean; error?: string };
     logout: () => void;
     clients: ClientAccount[];
-    createClient: (username: string, password: string, displayName: string) => { success: boolean; error?: string };
+    createClient: (username: string, password: string, displayName: string, spreadsheetUrl: string) => { success: boolean; error?: string };
     deleteClient: (username: string) => void;
 }
 
@@ -40,6 +42,21 @@ const STORAGE_KEYS = {
     user: 'aira_auth_user',
     clients: 'aira_clients',
 };
+
+// --- Helpers ---
+
+/**
+ * Extracts the Google Sheets spreadsheet ID from a full URL.
+ * Supports formats like:
+ *   https://docs.google.com/spreadsheets/d/SHEET_ID/edit
+ *   https://docs.google.com/spreadsheets/d/SHEET_ID/
+ *   https://docs.google.com/spreadsheets/d/SHEET_ID
+ */
+export function extractSheetId(url: string): string | null {
+    if (!url) return null;
+    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    return match ? match[1] : null;
+}
 
 // --- Context ---
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -66,14 +83,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch { return []; }
     });
 
+    const hasHydrated = useRef(false);
+
     // Persist user
     useEffect(() => {
         if (user) localStorage.setItem(STORAGE_KEYS.user, JSON.stringify(user));
         else localStorage.removeItem(STORAGE_KEYS.user);
     }, [user]);
 
-    // Persist clients
+    // Persist clients — skip the initial render to prevent overwriting stored data
     useEffect(() => {
+        if (!hasHydrated.current) {
+            hasHydrated.current = true;
+            return;
+        }
         localStorage.setItem(STORAGE_KEYS.clients, JSON.stringify(clients));
     }, [clients]);
 
@@ -90,7 +113,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Check clients
         const client = clients.find(c => c.username.toLowerCase() === trimUser && c.password === trimPass);
         if (client) {
-            setUser({ username: client.username, role: 'client', displayName: client.displayName });
+            setUser({
+                username: client.username,
+                role: 'client',
+                displayName: client.displayName,
+                spreadsheetUrl: client.spreadsheetUrl,
+            });
             return { success: true };
         }
 
@@ -101,17 +129,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(null);
     }, []);
 
-    const createClient = useCallback((username: string, password: string, displayName: string) => {
+    const createClient = useCallback((username: string, password: string, displayName: string, spreadsheetUrl: string) => {
         const trimUser = username.trim().toLowerCase();
         if (!trimUser || !password.trim()) return { success: false, error: 'Username and password are required' };
         if (trimUser === 'admin') return { success: false, error: 'Cannot use reserved username' };
         if (clients.some(c => c.username.toLowerCase() === trimUser)) return { success: false, error: 'Username already exists' };
         if (password.trim().length < 4) return { success: false, error: 'Password must be at least 4 characters' };
 
+        // Validate spreadsheet URL
+        const trimUrl = spreadsheetUrl.trim();
+        if (!trimUrl) return { success: false, error: 'Spreadsheet URL is required' };
+        const sheetId = extractSheetId(trimUrl);
+        if (!sheetId) return { success: false, error: 'Invalid Google Sheets URL. Paste the full URL from your browser.' };
+
         const newClient: ClientAccount = {
             username: trimUser,
             password: password.trim(),
             displayName: displayName.trim() || trimUser,
+            spreadsheetUrl: trimUrl,
             createdAt: new Date().toISOString(),
         };
         setClients(prev => [...prev, newClient]);

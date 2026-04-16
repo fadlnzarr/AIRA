@@ -1,9 +1,10 @@
 /**
  * Google Sheets Data Service
  * Fetches CSV data from published Google Sheets and parses into typed objects.
+ * Each client can have their own spreadsheet — pass a sheetId to override the default.
  */
 
-const SHEET_ID = '1MwZ4Xqp3M__lIjQRxsfSCPXzAPjRoyqa22DxWSkiynA';
+export const DEFAULT_SHEET_ID = '1MwZ4Xqp3M__lIjQRxsfSCPXzAPjRoyqa22DxWSkiynA';
 
 // GIDs for each sheet tab
 const GIDS = {
@@ -146,8 +147,9 @@ function parseCSVLine(line: string): string[] {
     return result;
 }
 
-async function fetchSheetCSV(gid: string): Promise<string> {
-    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+async function fetchSheetCSV(gid: string, sheetId?: string): Promise<string> {
+    const id = sheetId || DEFAULT_SHEET_ID;
+    const url = `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid}`;
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Failed to fetch sheet (gid=${gid}): ${response.status}`);
@@ -157,23 +159,23 @@ async function fetchSheetCSV(gid: string): Promise<string> {
 
 // --- Public Fetchers ---
 
-export async function fetchCustomers(): Promise<RawCustomer[]> {
-    const csv = await fetchSheetCSV(GIDS.customers);
+export async function fetchCustomers(sheetId?: string): Promise<RawCustomer[]> {
+    const csv = await fetchSheetCSV(GIDS.customers, sheetId);
     return parseCSV(csv) as unknown as RawCustomer[];
 }
 
-export async function fetchEmployees(): Promise<RawEmployee[]> {
-    const csv = await fetchSheetCSV(GIDS.employees);
+export async function fetchEmployees(sheetId?: string): Promise<RawEmployee[]> {
+    const csv = await fetchSheetCSV(GIDS.employees, sheetId);
     return parseCSV(csv) as unknown as RawEmployee[];
 }
 
-export async function fetchAppointmentsRaw(): Promise<RawAppointment[]> {
-    const csv = await fetchSheetCSV(GIDS.appointments);
+export async function fetchAppointmentsRaw(sheetId?: string): Promise<RawAppointment[]> {
+    const csv = await fetchSheetCSV(GIDS.appointments, sheetId);
     return parseCSV(csv) as unknown as RawAppointment[];
 }
 
-export async function fetchCallLogRaw(): Promise<RawCallLog[]> {
-    const csv = await fetchSheetCSV(GIDS.callLog);
+export async function fetchCallLogRaw(sheetId?: string): Promise<RawCallLog[]> {
+    const csv = await fetchSheetCSV(GIDS.callLog, sheetId);
     return parseCSV(csv) as unknown as RawCallLog[];
 }
 
@@ -205,10 +207,10 @@ function mapAppointmentStatus(status: string): { status: Appointment['status']; 
     return { status: 'pending', statusType: 'neutral' };
 }
 
-export async function fetchAppointments(): Promise<Appointment[]> {
+export async function fetchAppointments(sheetId?: string): Promise<Appointment[]> {
     const [rawAppointments, rawCustomers] = await Promise.all([
-        fetchAppointmentsRaw(),
-        fetchCustomers(),
+        fetchAppointmentsRaw(sheetId),
+        fetchCustomers(sheetId),
     ]);
 
     // Build email → name lookup from customers
@@ -250,8 +252,8 @@ function mapCallOutcome(leadStatus: string): { outcome: string; statusType: Call
     return { outcome: leadStatus || 'Unknown', statusType: 'neutral' };
 }
 
-export async function fetchCalls(): Promise<Call[]> {
-    const rawCalls = await fetchCallLogRaw();
+export async function fetchCalls(sheetId?: string): Promise<Call[]> {
+    const rawCalls = await fetchCallLogRaw(sheetId);
 
     return rawCalls.map((raw, index) => {
         const { outcome, statusType } = mapCallOutcome(raw['Lead Status']);
@@ -296,8 +298,8 @@ function mapUrgency(urgency: string): Lead['urgency'] {
     return 'low';
 }
 
-export async function fetchLeads(): Promise<Lead[]> {
-    const rawCalls = await fetchCallLogRaw();
+export async function fetchLeads(sheetId?: string): Promise<Lead[]> {
+    const rawCalls = await fetchCallLogRaw(sheetId);
 
     return rawCalls.map((raw, index) => {
         const { status, statusType } = mapLeadStatus(raw['Lead Status']);
@@ -329,10 +331,10 @@ export interface DashboardStats {
     conversionRate: number;
 }
 
-export async function fetchDashboardStats(): Promise<DashboardStats> {
+export async function fetchDashboardStats(sheetId?: string): Promise<DashboardStats> {
     const [calls, appointments] = await Promise.all([
-        fetchCallLogRaw(),
-        fetchAppointmentsRaw(),
+        fetchCallLogRaw(sheetId),
+        fetchAppointmentsRaw(sheetId),
     ]);
 
     const totalCalls = calls.length;
@@ -349,4 +351,105 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
         totalAppointments,
         conversionRate,
     };
+}
+
+// --- Weekly Activity ---
+
+export interface WeeklyActivityDay {
+    date: string; // e.g. "Mon", "Tue"
+    calls: number;
+}
+
+export async function fetchWeeklyActivity(sheetId?: string): Promise<WeeklyActivityDay[]> {
+    const rawCalls = await fetchCallLogRaw(sheetId);
+
+    // Build a map of dayLabel → count for the past 7 days
+    const today = new Date();
+    const days: WeeklyActivityDay[] = [];
+
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const label = d.toLocaleDateString('en-US', { weekday: 'short' }); // "Mon", "Tue"...
+        const dateStr = d.toISOString().split('T')[0]; // "YYYY-MM-DD"
+
+        const count = rawCalls.filter(c => {
+            const raw = c['created at'] || '';
+            if (!raw) return false;
+            try {
+                const callDate = new Date(raw).toISOString().split('T')[0];
+                return callDate === dateStr;
+            } catch {
+                return false;
+            }
+        }).length;
+
+        days.push({ date: label, calls: count });
+    }
+
+    return days;
+}
+
+// --- Funnel Data ---
+
+export interface FunnelData {
+    calls: number;
+    qualified: number;
+    booked: number;
+    escalated: number;
+}
+
+export async function fetchFunnelData(sheetId?: string): Promise<FunnelData> {
+    const rawCalls = await fetchCallLogRaw(sheetId);
+
+    const calls = rawCalls.length;
+    const qualified = rawCalls.filter(c => {
+        const s = c['Lead Status']?.toLowerCase().trim();
+        return s === 'hot lead' || s === 'warm lead' || s === 'booked';
+    }).length;
+    const booked = rawCalls.filter(c => c['Booked']?.toUpperCase() === 'TRUE').length;
+    // Escalated = follow-up needed
+    const escalated = rawCalls.filter(c => c['Follow Up needed?']?.toUpperCase() === 'TRUE').length;
+
+    return { calls, qualified, booked, escalated };
+}
+
+// --- Customer List ---
+
+export interface Customer {
+    id: string;
+    name: string;
+    type: string;
+    phone: string;
+    email: string;
+    address: string;
+    status: 'active' | 'inactive' | 'pending';
+    statusType: 'success' | 'neutral' | 'warning' | 'error';
+}
+
+function mapCustomerStatus(status: string): { status: Customer['status']; statusType: Customer['statusType'] } {
+    const s = status.toLowerCase().trim();
+    if (s === 'active') return { status: 'active', statusType: 'success' };
+    if (s === 'inactive' || s === 'closed') return { status: 'inactive', statusType: 'neutral' };
+    if (s === 'pending') return { status: 'pending', statusType: 'warning' };
+    return { status: 'active', statusType: 'success' };
+}
+
+export async function fetchCustomersList(sheetId?: string): Promise<Customer[]> {
+    const rawCustomers = await fetchCustomers(sheetId);
+
+    return rawCustomers.map((raw, index) => {
+        const { status, statusType } = mapCustomerStatus(raw['Customer Status']);
+
+        return {
+            id: String(index + 1),
+            name: raw['Customer Name'] || 'Unknown',
+            type: raw['Customer Type'] || '—',
+            phone: raw['Customer Phone Number'] || '—',
+            email: raw['Customer Email Address'] || '—',
+            address: raw['Customer Address'] || '—',
+            status,
+            statusType,
+        };
+    });
 }

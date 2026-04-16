@@ -27,6 +27,7 @@ import { Appointments } from './pages/dashboard/Appointments';
 import { Settings } from './pages/dashboard/Settings';
 import { Support } from './pages/dashboard/Support';
 import { ClientManagement } from './pages/dashboard/ClientManagement';
+import { Customers } from './pages/dashboard/Customers';
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -73,6 +74,11 @@ const AppContent = () => {
                   <Route path="calls" element={<Calls />} />
                   <Route path="leads" element={<Leads />} />
                   <Route path="appointments" element={<Appointments />} />
+                  <Route path="customers" element={
+                    <ProtectedRoute allowedRoles={['client']}>
+                      <Customers />
+                    </ProtectedRoute>
+                  } />
                   <Route path="clients" element={
                     <ProtectedRoute allowedRoles={['admin']}>
                       <ClientManagement />

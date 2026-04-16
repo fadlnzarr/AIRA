@@ -2,6 +2,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight } from 'lucide-react';
+import type { FunnelData } from '../../../src/lib/googleSheets';
 
 interface FunnelStepProps {
     label: string;
@@ -9,9 +10,10 @@ interface FunnelStepProps {
     dropoff?: string;
     isLast?: boolean;
     delay?: number;
+    loading?: boolean;
 }
 
-const FunnelStep: React.FC<FunnelStepProps> = ({ label, count, dropoff, isLast, delay = 0 }) => (
+const FunnelStep: React.FC<FunnelStepProps> = ({ label, count, dropoff, isLast, delay = 0, loading }) => (
     <div className="relative flex flex-1 items-center">
         {/* Step Content */}
         <motion.div
@@ -23,14 +25,17 @@ const FunnelStep: React.FC<FunnelStepProps> = ({ label, count, dropoff, isLast, 
         >
             <div className="flex flex-col">
                 <span className="text-[#1A1A1A]/50 text-[10px] uppercase tracking-widest mb-1">{label}</span>
-                <div className="flex items-baseline gap-2">
-                    <span className="text-[#1A1A1A] font-light text-2xl font-sans">{count.toLocaleString()}</span>
-                    {dropoff && (
-                        <span className="text-xs text-[#1A1A1A]/40 font-medium">-{dropoff}</span>
-                    )}
-                </div>
+                {loading ? (
+                    <div className="h-8 w-16 bg-[#1A1A1A]/10 rounded animate-pulse" />
+                ) : (
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-[#1A1A1A] font-light text-2xl font-sans">{count.toLocaleString()}</span>
+                        {dropoff && (
+                            <span className="text-xs text-[#1A1A1A]/40 font-medium">-{dropoff}</span>
+                        )}
+                    </div>
+                )}
             </div>
-
         </motion.div>
 
         {/* Connector */}
@@ -48,7 +53,21 @@ const FunnelStep: React.FC<FunnelStepProps> = ({ label, count, dropoff, isLast, 
     </div>
 );
 
-export const FunnelChart: React.FC = () => {
+interface FunnelChartProps {
+    data?: FunnelData;
+    loading?: boolean;
+}
+
+export const FunnelChart: React.FC<FunnelChartProps> = ({ data, loading }) => {
+    // Compute drop-off percentages from live data
+    const calls = data?.calls ?? 0;
+    const qualified = data?.qualified ?? 0;
+    const booked = data?.booked ?? 0;
+    const escalated = data?.escalated ?? 0;
+
+    const qualifiedDropoff = calls > 0 ? `${Math.round(((calls - qualified) / calls) * 100)}%` : undefined;
+    const bookedDropoff = qualified > 0 ? `${Math.round(((qualified - booked) / qualified) * 100)}%` : undefined;
+
     return (
         <div className="relative p-6 bg-white/30 backdrop-blur-md border border-white/50 rounded-2xl h-full overflow-hidden hover:shadow-lg hover:shadow-black/5 transition-all">
             {/* Background Grid Texture */}
@@ -62,10 +81,10 @@ export const FunnelChart: React.FC = () => {
             </h3>
 
             <div className="relative z-10 flex flex-col md:flex-row gap-4 md:gap-0 justify-between">
-                <FunnelStep label="Calls" count={1245} dropoff="12%" delay={0.1} />
-                <FunnelStep label="Qualified" count={892} dropoff="35%" delay={0.2} />
-                <FunnelStep label="Booked" count={410} dropoff="5%" delay={0.3} />
-                <FunnelStep label="Escalated" count={45} isLast delay={0.4} />
+                <FunnelStep label="Calls" count={calls} dropoff={qualifiedDropoff} delay={0.1} loading={loading} />
+                <FunnelStep label="Qualified" count={qualified} dropoff={bookedDropoff} delay={0.2} loading={loading} />
+                <FunnelStep label="Booked" count={booked} delay={0.3} loading={loading} />
+                <FunnelStep label="Follow-Up" count={escalated} isLast delay={0.4} loading={loading} />
             </div>
         </div>
     );

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { GlassMetricCard } from '../../components/dashboard/overview/GlassMetricCard';
 import { TrendChart } from '../../components/dashboard/overview/TrendChart';
@@ -6,11 +6,19 @@ import { FunnelChart } from '../../components/dashboard/overview/FunnelChart';
 import { SystemStatus } from '../../components/dashboard/overview/SystemStatus';
 import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
 import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
-import { fetchDashboardStats } from '../../src/lib/googleSheets';
-import { Phone, Users, CheckCircle, Clock, Activity, BarChart2, Calendar } from 'lucide-react';
+import { fetchDashboardStats, fetchWeeklyActivity, fetchFunnelData } from '../../src/lib/googleSheets';
+import { useClientSheetId } from '../../src/lib/useClientSheetId';
+import { Phone, Users, CheckCircle, Activity, BarChart2, Calendar } from 'lucide-react';
 
 export const Overview: React.FC = () => {
-    const { data: stats, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchDashboardStats);
+    const sheetId = useClientSheetId();
+    const statsFetcher = useCallback(() => fetchDashboardStats(sheetId), [sheetId]);
+    const weeklyFetcher = useCallback(() => fetchWeeklyActivity(sheetId), [sheetId]);
+    const funnelFetcher = useCallback(() => fetchFunnelData(sheetId), [sheetId]);
+
+    const { data: stats, loading, error, lastUpdated, refresh } = useGoogleSheets(statsFetcher, [sheetId]);
+    const { data: weeklyData, loading: weeklyLoading } = useGoogleSheets(weeklyFetcher, [sheetId]);
+    const { data: funnelData, loading: funnelLoading } = useGoogleSheets(funnelFetcher, [sheetId]);
 
     // Light Ref for the metallic effect
     const lightRef = useRef<HTMLDivElement>(null);
@@ -96,7 +104,7 @@ export const Overview: React.FC = () => {
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.7 }}
             >
-                <TrendChart />
+                <TrendChart data={weeklyData ?? undefined} loading={weeklyLoading} />
             </motion.div>
 
             {/* Section 3: Detailed Analytics Grid */}
@@ -114,7 +122,7 @@ export const Overview: React.FC = () => {
                         </div>
                         <h3 className="text-lg font-light text-[#1A1A1A]">Conversion Funnel</h3>
                     </div>
-                    <FunnelChart />
+                    <FunnelChart data={funnelData ?? undefined} loading={funnelLoading} />
                 </motion.div>
 
                 <motion.div
