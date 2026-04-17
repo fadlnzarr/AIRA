@@ -28,10 +28,10 @@ export const ClientSelectorBar: React.FC = () => {
         : null;
 
     return (
-        <div className="flex items-center gap-2 mb-6" ref={dropdownRef}>
+        <div className="flex items-center gap-2" ref={dropdownRef}>
             <div className="text-sm font-medium text-[#1A1A1A]/60 flex items-center gap-1.5 bg-[#1A1A1A]/5 px-3 py-1.5 rounded-lg border border-[#1A1A1A]/10">
                 <Users className="w-4 h-4" />
-                Viewing data for:
+                Viewing for:
             </div>
 
             <div className="relative">

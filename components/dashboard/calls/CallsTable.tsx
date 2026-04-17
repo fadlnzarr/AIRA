@@ -1,7 +1,16 @@
 
 import React from 'react';
-import { Eye, MoreHorizontal, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
-import { StatusBadge } from '../../ui/StatusBadge';
+import { Eye, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
+
+// ── Badge helpers ──────────────────────────────────────────────────────────────
+function outcomeBadge(statusType: string): string {
+    switch (statusType) {
+        case 'success': return 'bg-emerald-100 text-[#1A1A1A] ring-1 ring-emerald-200';
+        case 'warning': return 'bg-amber-100 text-[#1A1A1A] ring-1 ring-amber-200';
+        case 'error':   return 'bg-red-100 text-[#1A1A1A] ring-1 ring-red-200';
+        default:        return 'bg-zinc-100 text-[#1A1A1A] ring-1 ring-zinc-200';
+    }
+}
 
 // Mock Data Types
 export interface Call {
@@ -60,9 +69,9 @@ export const CallsTable: React.FC<CallsTableProps> = ({ calls, onRowClick }) => 
                                 {call.intent}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <StatusBadge status={call.statusType}>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${outcomeBadge(call.statusType)}`}>
                                     {call.outcome}
-                                </StatusBadge>
+                                </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-[#1A1A1A]/60 font-mono text-xs">
                                 {call.duration}

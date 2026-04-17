@@ -2,7 +2,17 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Calendar, Clock, MapPin, User, Mail, Phone, FileText } from 'lucide-react';
-import { StatusBadge } from '../../ui/StatusBadge';
+
+function apptStatusBadge(status: string): string {
+    switch (status) {
+        case 'confirmed':   return 'bg-emerald-100 text-[#1A1A1A] ring-1 ring-emerald-200';
+        case 'completed':   return 'bg-sky-100 text-[#1A1A1A] ring-1 ring-sky-200';
+        case 'pending':     return 'bg-amber-100 text-[#1A1A1A] ring-1 ring-amber-200';
+        case 'rescheduled': return 'bg-violet-100 text-[#1A1A1A] ring-1 ring-violet-200';
+        case 'cancelled':   return 'bg-red-100 text-[#1A1A1A] ring-1 ring-red-200';
+        default:            return 'bg-zinc-100 text-[#1A1A1A] ring-1 ring-zinc-200';
+    }
+}
 
 interface AppointmentDrawerProps {
     isOpen: boolean;
@@ -38,9 +48,9 @@ export const AppointmentDrawer: React.FC<AppointmentDrawerProps> = ({ isOpen, on
                         <div className="px-6 py-5 border-b border-[#1A1A1A]/10 flex items-start justify-between">
                             <div>
                                 <h2 className="text-xl font-serif italic text-[#1A1A1A] mb-2">Appointment Details</h2>
-                                <StatusBadge status={appointmentData.statusType}>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${apptStatusBadge(appointmentData.status)}`}>
                                     {appointmentData.status.charAt(0).toUpperCase() + appointmentData.status.slice(1)}
-                                </StatusBadge>
+                                </span>
                             </div>
                             <button
                                 onClick={onClose}
@@ -111,7 +121,7 @@ export const AppointmentDrawer: React.FC<AppointmentDrawerProps> = ({ isOpen, on
                                 <div className="space-y-2">
                                     <h3 className="text-sm font-medium text-[#1A1A1A]">Assigned Staff</h3>
                                     <div className="flex items-center gap-3 p-3 bg-[#1A1A1A]/5 border border-[#1A1A1A]/5 rounded-lg">
-                                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium border border-blue-200">
+                                        <div className="w-8 h-8 rounded-full bg-[#1A1A1A]/10 text-[#1A1A1A] flex items-center justify-center text-sm font-medium">
                                             {appointmentData.staff.charAt(0)}
                                         </div>
                                         <span className="text-sm text-[#1A1A1A]">{appointmentData.staff}</span>

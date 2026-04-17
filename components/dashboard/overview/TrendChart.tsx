@@ -23,7 +23,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data, loading }) => {
                     <div>
                         <h3 className="text-[#1A1A1A] text-lg font-light tracking-tight mb-1">Weekly Activity</h3>
                         <p className="text-[#1A1A1A]/40 text-xs font-mono">
-                            {loading ? 'Loading call volume…' : 'Live call volume — last 7 days'}
+                            {loading ? 'Loading call volume…' : 'Live call volume — selected period'}
                         </p>
                     </div>
                     {loading && (
@@ -68,38 +68,35 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data, loading }) => {
                                         onMouseEnter={() => setHoveredIndex(index)}
                                         onMouseLeave={() => setHoveredIndex(null)}
                                     >
-                                        {/* Tooltip */}
-                                        {isHovered && (
-                                            <div
-                                                className="absolute bg-white/90 backdrop-blur-xl border border-black/5 px-3 py-2 rounded-xl shadow-xl z-10 pointer-events-none"
-                                                style={{ bottom: `calc(${Math.max(heightPercent, 4)}% + 12px)`, minWidth: '80px', left: '50%', transform: 'translateX(-50%)' }}
-                                            >
-                                                <p className="text-[#1A1A1A]/50 text-[10px] uppercase tracking-wider mb-0.5">{entry.date}</p>
-                                                <div className="flex items-baseline gap-1.5">
-                                                    <p className="text-[#1A1A1A] text-lg font-light font-sans">{entry.calls}</p>
-                                                    <span className="text-[#1A1A1A]/40 text-[10px] font-medium">calls</span>
-                                                </div>
-                                            </div>
-                                        )}
+                                        {/* Value Label (Persistent) */}
+                                        <span 
+                                            className={`text-[10px] font-sans font-medium mb-1.5 transition-opacity duration-300 ${entry.calls > 0 ? 'text-[#1A1A1A]' : 'text-[#1A1A1A]/30'}`}
+                                            style={{ opacity: isHovered ? 1 : 0.7 }}
+                                        >
+                                            {entry.calls}
+                                        </span>
 
                                         {/* Bar */}
                                         <div
                                             className="transition-all duration-500 cursor-default"
                                             style={{
                                                 height: `${Math.max(heightPercent, entry.calls > 0 ? 2 : 0)}%`,
-                                                width: '14px',
+                                                width: '18px',
                                                 backgroundColor: isMax
                                                     ? '#1A1A1A'
                                                     : isHovered
                                                     ? 'rgba(26,26,26,0.45)'
-                                                    : 'rgba(26,26,26,0.2)',
+                                                    : 'rgba(26,26,26,0.15)',
                                                 borderRadius: '6px',
                                             }}
                                         />
 
-                                        {/* Label */}
-                                        <span className="text-[10px] text-[#1A1A1A]/40 font-sans mt-2 absolute -bottom-2" style={{ whiteSpace: 'nowrap' }}>
-                                            {index % 2 === 0 ? entry.date : ''}
+                                        {/* Weekday Label */}
+                                        <span 
+                                            className={`text-[11px] font-medium mt-2 absolute -bottom-6 transition-colors duration-200 ${isHovered ? 'text-[#1A1A1A]' : 'text-[#1A1A1A]/60'}`}
+                                            style={{ whiteSpace: 'nowrap' }}
+                                        >
+                                            {entry.date}
                                         </span>
                                     </div>
                                 );

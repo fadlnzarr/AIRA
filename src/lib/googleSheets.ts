@@ -179,6 +179,26 @@ export async function fetchCallLogRaw(sheetId?: string): Promise<RawCallLog[]> {
     return parseCSV(csv) as unknown as RawCallLog[];
 }
 
+// --- Helpers ---
+
+function isDateInRange(dateStr: string, from: Date | null, to: Date | null): boolean {
+    if (!dateStr) return false;
+    if (!from && !to) return true; // All time
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return false;
+        
+        // Normalize dates to start/end of day for broader matching if needed, 
+        // but for now strict comparison is safer.
+        if (from && d < from) return false;
+        if (to && d > to) return false;
+        
+        return true;
+    } catch {
+        return false;
+    }
+}
+
 // --- Data Transformers (Sheet Data → Dashboard Interfaces) ---
 
 import type { Appointment } from '../../components/dashboard/appointments/AppointmentsList';
@@ -309,10 +329,12 @@ export async function fetchLeads(sheetId?: string): Promise<Lead[]> {
             name: raw['Customer Name'] || 'Unknown',
             email: raw['Customer Email'] || '',
             phone: raw['Phone'] || '',
-            service: raw['Urgency'] ? `${raw['Urgency']} Priority` : 'General',
+            service: raw['Lead Reason'] || 'General Inquiry',
             urgency: mapUrgency(raw['Urgency']),
             status,
             statusType,
+            sentiment: raw['Sentiment'] || 'Neutral',
+            followUp: raw['Follow Up needed?']?.toUpperCase() === 'TRUE',
             assignedTo: 'AI Agent',
             createdDate: raw['created at'] || '',
             summary: raw['Call Summary']
@@ -331,11 +353,14 @@ export interface DashboardStats {
     conversionRate: number;
 }
 
-export async function fetchDashboardStats(sheetId?: string): Promise<DashboardStats> {
-    const [calls, appointments] = await Promise.all([
+export async function fetchDashboardStats(sheetId?: string, from?: Date | null, to?: Date | null): Promise<DashboardStats> {
+    const [callsRaw, appointmentsRaw] = await Promise.all([
         fetchCallLogRaw(sheetId),
         fetchAppointmentsRaw(sheetId),
     ]);
+
+    const calls = callsRaw.filter(c => isDateInRange(c['created at'], from || null, to || null));
+    const appointments = appointmentsRaw.filter(a => isDateInRange(a['Appointment Timing'], from || null, to || null));
 
     const totalCalls = calls.length;
     const activeLeads = calls.filter(c =>
@@ -360,18 +385,26 @@ export interface WeeklyActivityDay {
     calls: number;
 }
 
-export async function fetchWeeklyActivity(sheetId?: string): Promise<WeeklyActivityDay[]> {
+export async function fetchWeeklyActivity(sheetId?: string, from?: Date | null, to?: Date | null): Promise<WeeklyActivityDay[]> {
     const rawCalls = await fetchCallLogRaw(sheetId);
 
-    // Build a map of dayLabel → count for the past 7 days
-    const today = new Date();
+    // If a range is provided, show up to 14 days within that range. 
+    // Otherwise, default to the last 7 days.
+    const endDate = to || new Date();
+    const daysToShow = from && to 
+        ? Math.min(Math.ceil((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24)) + 1, 14)
+        : 7;
+    
+    const startDate = from || new Date(endDate);
+    if (!from) startDate.setDate(endDate.getDate() - (daysToShow - 1));
+
     const days: WeeklyActivityDay[] = [];
 
-    for (let i = 6; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const label = d.toLocaleDateString('en-US', { weekday: 'short' }); // "Mon", "Tue"...
-        const dateStr = d.toISOString().split('T')[0]; // "YYYY-MM-DD"
+    for (let i = 0; i < daysToShow; i++) {
+        const d = new Date(startDate);
+        d.setDate(startDate.getDate() + i);
+        const label = d.toLocaleDateString('en-US', { weekday: 'short' }); 
+        const dateStr = d.toISOString().split('T')[0]; 
 
         const count = rawCalls.filter(c => {
             const raw = c['created at'] || '';
@@ -399,8 +432,9 @@ export interface FunnelData {
     escalated: number;
 }
 
-export async function fetchFunnelData(sheetId?: string): Promise<FunnelData> {
-    const rawCalls = await fetchCallLogRaw(sheetId);
+export async function fetchFunnelData(sheetId?: string, from?: Date | null, to?: Date | null): Promise<FunnelData> {
+    const rawCallsAll = await fetchCallLogRaw(sheetId);
+    const rawCalls = rawCallsAll.filter(c => isDateInRange(c['created at'], from || null, to || null));
 
     const calls = rawCalls.length;
     const qualified = rawCalls.filter(c => {
