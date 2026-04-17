@@ -26,7 +26,10 @@ interface AuthContextType {
     logout: () => void;
     clients: ClientAccount[];
     createClient: (username: string, password: string, displayName: string, spreadsheetUrl: string) => { success: boolean; error?: string };
+    updateClient: (originalUsername: string, updates: Partial<Pick<ClientAccount, 'username' | 'password' | 'displayName' | 'spreadsheetUrl'>>) => { success: boolean; error?: string };
     deleteClient: (username: string) => void;
+    adminSettings: { spreadsheetUrl?: string };
+    updateAdminSpreadsheet: (url: string) => { success: boolean; error?: string };
 }
 
 // --- Hardcoded Admin ---
@@ -41,6 +44,7 @@ const ADMIN_CREDENTIALS = {
 const STORAGE_KEYS = {
     user: 'aira_auth_user',
     clients: 'aira_clients',
+    adminSettings: 'aira_admin_settings',
 };
 
 // --- Helpers ---
@@ -83,6 +87,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch { return []; }
     });
 
+    const [adminSettings, setAdminSettings] = useState<{ spreadsheetUrl?: string }>(() => {
+        try {
+            const stored = localStorage.getItem(STORAGE_KEYS.adminSettings);
+            return stored ? JSON.parse(stored) : {};
+        } catch { return {}; }
+    });
+
     const hasHydrated = useRef(false);
 
     // Persist user
@@ -99,6 +110,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         localStorage.setItem(STORAGE_KEYS.clients, JSON.stringify(clients));
     }, [clients]);
+
+    useEffect(() => {
+        if (!hasHydrated.current) return;
+        localStorage.setItem(STORAGE_KEYS.adminSettings, JSON.stringify(adminSettings));
+    }, [adminSettings]);
 
     const login = useCallback((username: string, password: string) => {
         const trimUser = username.trim().toLowerCase();
@@ -153,12 +169,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: true };
     }, [clients]);
 
+    const updateClient = useCallback((originalUsername: string, updates: Partial<Pick<ClientAccount, 'username' | 'password' | 'displayName' | 'spreadsheetUrl'>>) => {
+        const newUsername = updates.username?.trim().toLowerCase();
+        const existing = clients.find(c => c.username === originalUsername);
+        if (!existing) return { success: false, error: 'Client not found' };
+
+        if (newUsername && newUsername !== originalUsername) {
+            if (newUsername === 'admin') return { success: false, error: 'Cannot use reserved username' };
+            if (clients.some(c => c.username.toLowerCase() === newUsername)) return { success: false, error: 'Username already exists' };
+        }
+        if (updates.password !== undefined && updates.password.trim().length < 4) {
+            return { success: false, error: 'Password must be at least 4 characters' };
+        }
+        if (updates.spreadsheetUrl !== undefined) {
+            const trimUrl = updates.spreadsheetUrl.trim();
+            const sheetId = extractSheetId(trimUrl);
+            if (!sheetId) return { success: false, error: 'Invalid Google Sheets URL. Paste the full URL from your browser.' };
+            updates = { ...updates, spreadsheetUrl: trimUrl };
+        }
+
+        setClients(prev => prev.map(c => {
+            if (c.username !== originalUsername) return c;
+            return {
+                ...c,
+                username: newUsername || c.username,
+                password: updates.password?.trim() || c.password,
+                displayName: updates.displayName?.trim() || c.displayName,
+                spreadsheetUrl: updates.spreadsheetUrl ?? c.spreadsheetUrl,
+            };
+        }));
+
+        // Update active session if this client is logged in
+        setUser(prev => {
+            if (!prev || prev.username !== originalUsername) return prev;
+            return {
+                ...prev,
+                username: newUsername || prev.username,
+                displayName: updates.displayName?.trim() || prev.displayName,
+                spreadsheetUrl: updates.spreadsheetUrl ?? prev.spreadsheetUrl,
+            };
+        });
+
+        return { success: true };
+    }, [clients]);
+
     const deleteClient = useCallback((username: string) => {
         setClients(prev => prev.filter(c => c.username !== username));
     }, []);
 
+    const updateAdminSpreadsheet = useCallback((url: string) => {
+        const trimUrl = url.trim();
+        if (trimUrl) {
+            const sheetId = extractSheetId(trimUrl);
+            if (!sheetId) return { success: false, error: 'Invalid Google Sheets URL. Paste the full URL from your browser.' };
+        }
+        setAdminSettings(prev => ({ ...prev, spreadsheetUrl: trimUrl }));
+        return { success: true };
+    }, []);
+
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, clients, createClient, deleteClient }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, clients, createClient, updateClient, deleteClient, adminSettings, updateAdminSpreadsheet }}>
             {children}
         </AuthContext.Provider>
     );

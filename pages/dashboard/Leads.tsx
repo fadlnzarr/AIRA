@@ -8,6 +8,7 @@ import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
 import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
 import { fetchLeads } from '../../src/lib/googleSheets';
 import { useClientSheetId } from '../../src/lib/useClientSheetId';
+import { ClientSelectorBar } from '../../components/dashboard/ClientSelectorBar';
 import { Loader2 } from 'lucide-react';
 
 function parseDate(dateStr: string): Date | null {
@@ -69,14 +70,16 @@ export const Leads: React.FC = () => {
             <div className="flex items-end justify-between">
                 <div>
                     <h2 className="text-2xl font-serif italic text-[#1A1A1A] mb-1">
-                        Leads Management
+                        Leads Overview
                     </h2>
                     <p className="text-[#1A1A1A]/60 text-sm">
-                        Track, assign, and convert incoming leads.
+                        Track, analyze, and monitor incoming leads.
                     </p>
                 </div>
                 <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
+
+            <ClientSelectorBar />
 
             <LeadsFilter filters={filters} onFilterChange={setFilters} statusCounts={statusCounts} urgencyCounts={urgencyCounts} />
 

@@ -9,6 +9,7 @@ import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
 import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
 import { fetchAppointments } from '../../src/lib/googleSheets';
 import { useClientSheetId } from '../../src/lib/useClientSheetId';
+import { ClientSelectorBar } from '../../components/dashboard/ClientSelectorBar';
 import { Loader2 } from 'lucide-react';
 
 function parseDate(dateStr: string): Date | null {
@@ -62,11 +63,13 @@ export const Appointments: React.FC = () => {
                         Appointments
                     </h2>
                     <p className="text-[#1A1A1A]/60 text-sm">
-                        Manage your upcoming bookings and schedule.
+                        View your upcoming bookings and schedule.
                     </p>
                 </div>
                 <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
+
+            <ClientSelectorBar />
 
             <AppointmentsFilter view={view} onViewChange={setView} filters={filters} onFilterChange={setFilters} statusCounts={statusCounts} />
 
@@ -87,7 +90,10 @@ export const Appointments: React.FC = () => {
                         onRowClick={(apt) => setSelectedAppointment(apt)}
                     />
                 ) : (
-                    <AppointmentsCalendar />
+                    <AppointmentsCalendar
+                        appointments={filteredAppointments}
+                        onSelect={(apt) => setSelectedAppointment(apt)}
+                    />
                 )}
             </motion.div>
 

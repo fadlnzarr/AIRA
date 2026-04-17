@@ -16,6 +16,7 @@ import { PageTransition } from './components/PageTransition';
 import { CounterPreloader } from './components/ui/counter-preloader';
 import { GrainBackground } from './components/ui/grain-background';
 import { AuthProvider } from './src/lib/AuthContext';
+import { AdminSelectedClientProvider } from './src/lib/useAdminSelectedClient';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 
 // Dashboard Imports
@@ -111,9 +112,11 @@ const AppContent = () => {
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <HashRouter>
-        <AppContent />
-      </HashRouter>
+      <AdminSelectedClientProvider>
+        <HashRouter>
+          <AppContent />
+        </HashRouter>
+      </AdminSelectedClientProvider>
     </AuthProvider>
   );
 };

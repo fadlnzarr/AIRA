@@ -8,6 +8,7 @@ import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
 import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
 import { fetchCalls } from '../../src/lib/googleSheets';
 import { useClientSheetId } from '../../src/lib/useClientSheetId';
+import { ClientSelectorBar } from '../../components/dashboard/ClientSelectorBar';
 import { Loader2 } from 'lucide-react';
 
 function parseDate(dateStr: string): Date | null {
@@ -60,11 +61,13 @@ export const Calls: React.FC = () => {
                         Call Logs
                     </h2>
                     <p className="text-[#1A1A1A]/60 text-sm">
-                        View and manage your AI agent's conversations.
+                        View and analyze your AI agent's conversations.
                     </p>
                 </div>
                 <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
+
+            <ClientSelectorBar />
 
             <CallsFilter filters={filters} onFilterChange={setFilters} outcomeCounts={outcomeCounts} />
 

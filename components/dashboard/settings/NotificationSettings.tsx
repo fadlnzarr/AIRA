@@ -6,12 +6,11 @@ interface NotificationToggleProps {
     icon: React.ReactNode;
     title: string;
     description: string;
-    defaultChecked?: boolean;
+    enabled: boolean;
+    onToggle: () => void;
 }
 
-const NotificationToggle: React.FC<NotificationToggleProps> = ({ icon, title, description, defaultChecked = false }) => {
-    const [enabled, setEnabled] = useState(defaultChecked);
-
+const NotificationToggle: React.FC<NotificationToggleProps> = ({ icon, title, description, enabled, onToggle }) => {
     return (
         <div className="flex items-center justify-between py-3 border-b border-white/5 last:border-0">
             <div className="flex items-center gap-3">
@@ -24,7 +23,7 @@ const NotificationToggle: React.FC<NotificationToggleProps> = ({ icon, title, de
                 </div>
             </div>
             <button
-                onClick={() => setEnabled(!enabled)}
+                onClick={onToggle}
                 className={`transition-colors ${enabled ? 'text-white' : 'text-white/20'}`}
             >
                 {enabled ? <ToggleRight className="w-6 h-6" /> : <ToggleLeft className="w-6 h-6" />}
@@ -33,31 +32,48 @@ const NotificationToggle: React.FC<NotificationToggleProps> = ({ icon, title, de
     );
 }
 
+import { useSettingsContext } from './SettingsContext';
+
 export const NotificationSettings: React.FC = () => {
+    const { settings, setSettings } = useSettingsContext();
+    const { notifications } = settings;
+
+    const toggleNotification = (key: keyof typeof notifications) => {
+        setSettings({
+            ...settings,
+            notifications: { ...notifications, [key]: !notifications[key] }
+        });
+    };
+
     return (
         <div className="space-y-2">
             <NotificationToggle
                 icon={<Mail className="w-4 h-4" />}
                 title="Email Notifications"
                 description="Receive daily summaries and critical alerts via email."
-                defaultChecked
+                enabled={notifications.email}
+                onToggle={() => toggleNotification('email')}
             />
             <NotificationToggle
                 icon={<MessageSquare className="w-4 h-4" />}
                 title="SMS Notifications"
                 description="Get instant text messages for urgent escalations."
-                defaultChecked
+                enabled={notifications.sms}
+                onToggle={() => toggleNotification('sms')}
             />
             <NotificationToggle
                 icon={<Bell className="w-4 h-4" />}
                 title="Browser Push"
                 description="Show desktop notifications when dashboard is open."
+                enabled={notifications.browser}
+                onToggle={() => toggleNotification('browser')}
             />
             <NotificationToggle
                 icon={<AlertCircle className="w-4 h-4" />} // Using AlertCircle defined implicitly, or import it if needed. Assuming parent imports usage or similar. Just reusing icon prop. Actually need to import AlertCircle here to be safe.
                 title="Failed Call Alerts"
                 description="Notify immediately if a call fails or disconnects abruptly."
-                defaultChecked
+                enabled={notifications.failedCalls}
+                onToggle={() => toggleNotification('failedCalls')}
             />
         </div>
     );

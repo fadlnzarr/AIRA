@@ -33,7 +33,6 @@ export const CallsTable: React.FC<CallsTableProps> = ({ calls, onRowClick }) => 
                         <th className="px-6 py-4 border-b border-[#1A1A1A]/5">Intent</th>
                         <th className="px-6 py-4 border-b border-[#1A1A1A]/5">Outcome</th>
                         <th className="px-6 py-4 border-b border-[#1A1A1A]/5">Duration</th>
-                        <th className="px-6 py-4 border-b border-[#1A1A1A]/5 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1A1A1A]/5 text-sm">
@@ -68,22 +67,12 @@ export const CallsTable: React.FC<CallsTableProps> = ({ calls, onRowClick }) => 
                             <td className="px-6 py-4 whitespace-nowrap text-[#1A1A1A]/60 font-mono text-xs">
                                 {call.duration}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button className="p-2 hover:bg-[#1A1A1A]/10 rounded-lg text-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors">
-                                        <Eye className="w-4 h-4" />
-                                    </button>
-                                    <button className="p-2 hover:bg-[#1A1A1A]/10 rounded-lg text-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors">
-                                        <MoreHorizontal className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </td>
                         </tr>
                     ))}
 
                     {calls.length === 0 && (
                         <tr>
-                            <td colSpan={6} className="px-6 py-12 text-center text-[#1A1A1A]/30">
+                            <td colSpan={5} className="px-6 py-12 text-center text-[#1A1A1A]/30">
                                 No calls found matching your filters.
                             </td>
                         </tr>
