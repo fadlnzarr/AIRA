@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Search, Download, Flame, UserCheck, Award, XCircle } from 'lucide-react';
+import { Search, Flame, UserCheck, Award, XCircle } from 'lucide-react';
 import { CustomDropdown } from '../../ui/CustomDropdown';
 import { DateRangePicker, DateRange, DEFAULT_DATE_RANGE } from '../../ui/DateRangePicker';
 
@@ -102,9 +102,7 @@ export const LeadsFilter: React.FC<LeadsFilterProps> = ({ filters, onFilterChang
                         className="pl-9 pr-4 py-2 bg-[#1A1A1A]/5 border border-[#1A1A1A]/10 rounded-xl text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:outline-none focus:border-[#1A1A1A]/30 w-full md:w-64 transition-colors"
                     />
                 </div>
-                <button className="p-2 hover:bg-[#1A1A1A]/10 rounded-xl text-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors border border-[#1A1A1A]/10" title="Export CSV">
-                    <Download className="w-4 h-4" />
-                </button>
+
             </div>
         </div>
     );

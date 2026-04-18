@@ -66,7 +66,9 @@ export const LeadsDrawer: React.FC<LeadsDrawerProps> = ({ isOpen, onClose, leadD
                             <div>
                                 <div className="flex items-center gap-3 mb-2">
                                     <h2 className="text-xl font-serif italic text-[#1A1A1A]">{leadData.name}</h2>
-                                    <UrgencyBadge level={leadData.urgency} />
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${urgencyBadge(leadData.urgency)}`}>
+                                        {leadData.urgency?.charAt(0).toUpperCase() + leadData.urgency?.slice(1)}
+                                    </span>
                                 </div>
                                 <div className="flex items-center gap-4 text-sm text-[#1A1A1A]/50">
                                     <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5" /> {leadData.email || '—'}</span>
