@@ -1,9 +1,16 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Phone, PhoneForwarded, AlertCircle, ToggleRight, ToggleLeft } from 'lucide-react';
+import { useSettingsContext } from './SettingsContext';
 
 export const EscalationRules: React.FC = () => {
-    const [enabled, setEnabled] = useState(true);
+    const { settings, setSettings } = useSettingsContext();
+    const { escalation } = settings;
+    const { enabled, transferNumber, fallbackNumber, requestHuman, highFrustration, unknownIntent, highValueLead } = escalation;
+
+    const updateEscalation = (updates: Partial<typeof escalation>) => {
+        setSettings({ ...settings, escalation: { ...escalation, ...updates } });
+    };
 
     return (
         <div className="space-y-6">
@@ -19,7 +26,7 @@ export const EscalationRules: React.FC = () => {
                     </div>
                 </div>
                 <button
-                    onClick={() => setEnabled(!enabled)}
+                    onClick={() => updateEscalation({ enabled: !enabled })}
                     className={`transition-colors ${enabled ? 'text-purple-400' : 'text-white/20'}`}
                 >
                     {enabled ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
@@ -35,7 +42,8 @@ export const EscalationRules: React.FC = () => {
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                             <input
                                 type="tel"
-                                defaultValue="+1 (555) 123-4567"
+                                value={transferNumber}
+                                onChange={(e) => updateEscalation({ transferNumber: e.target.value })}
                                 className="w-full pl-9 pr-4 py-2.5 bg-[#111] border border-white/10 rounded-lg text-sm text-white focus:border-white/30 focus:outline-none placeholder:text-white/20"
                             />
                         </div>
@@ -47,6 +55,8 @@ export const EscalationRules: React.FC = () => {
                             <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
                             <input
                                 type="tel"
+                                value={fallbackNumber}
+                                onChange={(e) => updateEscalation({ fallbackNumber: e.target.value })}
                                 placeholder="Optional backup number"
                                 className="w-full pl-9 pr-4 py-2.5 bg-[#111] border border-white/10 rounded-lg text-sm text-white focus:border-white/30 focus:outline-none placeholder:text-white/20"
                             />
@@ -58,19 +68,19 @@ export const EscalationRules: React.FC = () => {
                     <label className="text-xs text-white/50 uppercase tracking-widest pl-1">Trigger Conditions</label>
                     <div className="p-4 bg-[#111] border border-white/10 rounded-lg space-y-3">
                         <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-purple-500 checked:border-purple-500 transition-colors" />
+                            <input type="checkbox" checked={requestHuman} onChange={(e) => updateEscalation({ requestHuman: e.target.checked })} className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-purple-500 checked:border-purple-500 transition-colors" />
                             <span className="text-sm text-white/80 group-hover:text-white transition-colors">User explicitly requests a human agent</span>
                         </label>
                         <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" defaultChecked className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-purple-500 checked:border-purple-500 transition-colors" />
+                            <input type="checkbox" checked={highFrustration} onChange={(e) => updateEscalation({ highFrustration: e.target.checked })} className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-purple-500 checked:border-purple-500 transition-colors" />
                             <span className="text-sm text-white/80 group-hover:text-white transition-colors">AI detects high frustration or anger</span>
                         </label>
                         <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-purple-500 checked:border-purple-500 transition-colors" />
+                            <input type="checkbox" checked={unknownIntent} onChange={(e) => updateEscalation({ unknownIntent: e.target.checked })} className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-purple-500 checked:border-purple-500 transition-colors" />
                             <span className="text-sm text-white/80 group-hover:text-white transition-colors">Unknown user intent after 2 attempts</span>
                         </label>
                         <label className="flex items-center gap-3 cursor-pointer group">
-                            <input type="checkbox" className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-purple-500 checked:border-purple-500 transition-colors" />
+                            <input type="checkbox" checked={highValueLead} onChange={(e) => updateEscalation({ highValueLead: e.target.checked })} className="w-4 h-4 rounded border-white/20 bg-transparent checked:bg-purple-500 checked:border-purple-500 transition-colors" />
                             <span className="text-sm text-white/80 group-hover:text-white transition-colors">Lead is qualified as "High Value"</span>
                         </label>
                     </div>

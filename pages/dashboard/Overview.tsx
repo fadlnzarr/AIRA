@@ -1,16 +1,29 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { GlassMetricCard } from '../../components/dashboard/overview/GlassMetricCard';
 import { TrendChart } from '../../components/dashboard/overview/TrendChart';
 import { FunnelChart } from '../../components/dashboard/overview/FunnelChart';
 import { SystemStatus } from '../../components/dashboard/overview/SystemStatus';
 import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
+import { ClientSelectorBar } from '../../components/dashboard/ClientSelectorBar';
 import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
-import { fetchDashboardStats } from '../../src/lib/googleSheets';
-import { Phone, Users, CheckCircle, Clock, Activity, BarChart2, Calendar } from 'lucide-react';
+import { fetchDashboardStats, fetchWeeklyActivity, fetchFunnelData } from '../../src/lib/googleSheets';
+import { useClientSheetId } from '../../src/lib/useClientSheetId';
+import { Phone, Users, CheckCircle, Activity, BarChart2, Calendar } from 'lucide-react';
+import { DateRangePicker, DEFAULT_DATE_RANGE, type DateRange } from '../../components/ui/DateRangePicker';
+import { useState } from 'react';
 
 export const Overview: React.FC = () => {
-    const { data: stats, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchDashboardStats);
+    const sheetId = useClientSheetId();
+    const [dateRange, setDateRange] = useState<DateRange>(DEFAULT_DATE_RANGE);
+
+    const statsFetcher = useCallback(() => fetchDashboardStats(sheetId, dateRange.from, dateRange.to), [sheetId, dateRange.from, dateRange.to]);
+    const weeklyFetcher = useCallback(() => fetchWeeklyActivity(sheetId, dateRange.from, dateRange.to), [sheetId, dateRange.from, dateRange.to]);
+    const funnelFetcher = useCallback(() => fetchFunnelData(sheetId, dateRange.from, dateRange.to), [sheetId, dateRange.from, dateRange.to]);
+
+    const { data: stats, loading, error, lastUpdated, refresh } = useGoogleSheets(statsFetcher, [sheetId, dateRange.from, dateRange.to]);
+    const { data: weeklyData, loading: weeklyLoading } = useGoogleSheets(weeklyFetcher, [sheetId, dateRange.from, dateRange.to]);
+    const { data: funnelData, loading: funnelLoading } = useGoogleSheets(funnelFetcher, [sheetId, dateRange.from, dateRange.to]);
 
     // Light Ref for the metallic effect
     const lightRef = useRef<HTMLDivElement>(null);
@@ -49,6 +62,12 @@ export const Overview: React.FC = () => {
                     </div>
                     <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
                 </motion.div>
+            </div>
+
+            {/* Controls Bar */}
+            <div className="relative z-20 flex flex-wrap items-center gap-4 -mt-4 mb-6">
+                <DateRangePicker value={dateRange} onChange={setDateRange} />
+                <ClientSelectorBar />
             </div>
 
             {/* Section 1: Key Metrics */}
@@ -96,7 +115,7 @@ export const Overview: React.FC = () => {
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.7 }}
             >
-                <TrendChart />
+                <TrendChart data={weeklyData ?? undefined} loading={weeklyLoading} />
             </motion.div>
 
             {/* Section 3: Detailed Analytics Grid */}
@@ -114,7 +133,7 @@ export const Overview: React.FC = () => {
                         </div>
                         <h3 className="text-lg font-light text-[#1A1A1A]">Conversion Funnel</h3>
                     </div>
-                    <FunnelChart />
+                    <FunnelChart data={funnelData ?? undefined} loading={funnelLoading} />
                 </motion.div>
 
                 <motion.div

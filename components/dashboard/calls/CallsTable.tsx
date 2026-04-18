@@ -1,7 +1,16 @@
 
 import React from 'react';
-import { Eye, MoreHorizontal, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
-import { StatusBadge } from '../../ui/StatusBadge';
+import { Eye, PhoneIncoming, PhoneOutgoing } from 'lucide-react';
+
+// ── Badge helpers ──────────────────────────────────────────────────────────────
+function outcomeBadge(statusType: string): string {
+    switch (statusType) {
+        case 'success': return 'bg-emerald-100 text-[#1A1A1A] ring-1 ring-emerald-200';
+        case 'warning': return 'bg-amber-100 text-[#1A1A1A] ring-1 ring-amber-200';
+        case 'error':   return 'bg-red-100 text-[#1A1A1A] ring-1 ring-red-200';
+        default:        return 'bg-zinc-100 text-[#1A1A1A] ring-1 ring-zinc-200';
+    }
+}
 
 // Mock Data Types
 export interface Call {
@@ -33,7 +42,6 @@ export const CallsTable: React.FC<CallsTableProps> = ({ calls, onRowClick }) => 
                         <th className="px-6 py-4 border-b border-[#1A1A1A]/5">Intent</th>
                         <th className="px-6 py-4 border-b border-[#1A1A1A]/5">Outcome</th>
                         <th className="px-6 py-4 border-b border-[#1A1A1A]/5">Duration</th>
-                        <th className="px-6 py-4 border-b border-[#1A1A1A]/5 text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1A1A1A]/5 text-sm">
@@ -61,29 +69,19 @@ export const CallsTable: React.FC<CallsTableProps> = ({ calls, onRowClick }) => 
                                 {call.intent}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <StatusBadge status={call.statusType}>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${outcomeBadge(call.statusType)}`}>
                                     {call.outcome}
-                                </StatusBadge>
+                                </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-[#1A1A1A]/60 font-mono text-xs">
                                 {call.duration}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button className="p-2 hover:bg-[#1A1A1A]/10 rounded-lg text-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors">
-                                        <Eye className="w-4 h-4" />
-                                    </button>
-                                    <button className="p-2 hover:bg-[#1A1A1A]/10 rounded-lg text-[#1A1A1A]/50 hover:text-[#1A1A1A] transition-colors">
-                                        <MoreHorizontal className="w-4 h-4" />
-                                    </button>
-                                </div>
                             </td>
                         </tr>
                     ))}
 
                     {calls.length === 0 && (
                         <tr>
-                            <td colSpan={6} className="px-6 py-12 text-center text-[#1A1A1A]/30">
+                            <td colSpan={5} className="px-6 py-12 text-center text-[#1A1A1A]/30">
                                 No calls found matching your filters.
                             </td>
                         </tr>

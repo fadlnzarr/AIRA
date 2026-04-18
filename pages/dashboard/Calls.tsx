@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { CallsFilter, CallsFilterState, DEFAULT_CALLS_FILTERS } from '../../components/dashboard/calls/CallsFilter';
 import { CallsTable, Call } from '../../components/dashboard/calls/CallsTable';
@@ -7,6 +7,8 @@ import { CallDrawer } from '../../components/dashboard/calls/CallDrawer';
 import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
 import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
 import { fetchCalls } from '../../src/lib/googleSheets';
+import { useClientSheetId } from '../../src/lib/useClientSheetId';
+import { ClientSelectorBar } from '../../components/dashboard/ClientSelectorBar';
 import { Loader2 } from 'lucide-react';
 
 function parseDate(dateStr: string): Date | null {
@@ -19,7 +21,9 @@ export const Calls: React.FC = () => {
     const [selectedCall, setSelectedCall] = useState<Call | null>(null);
     const [filters, setFilters] = useState<CallsFilterState>(DEFAULT_CALLS_FILTERS);
 
-    const { data: calls, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchCalls);
+    const sheetId = useClientSheetId();
+    const callsFetcher = useCallback(() => fetchCalls(sheetId), [sheetId]);
+    const { data: calls, loading, error, lastUpdated, refresh } = useGoogleSheets(callsFetcher, [sheetId]);
 
     const outcomeCounts = useMemo(() => {
         const counts: Record<string, number> = {};
@@ -57,11 +61,13 @@ export const Calls: React.FC = () => {
                         Call Logs
                     </h2>
                     <p className="text-[#1A1A1A]/60 text-sm">
-                        View and manage your AI agent's conversations.
+                        View and analyze your AI agent's conversations.
                     </p>
                 </div>
                 <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
+
+            <ClientSelectorBar />
 
             <CallsFilter filters={filters} onFilterChange={setFilters} outcomeCounts={outcomeCounts} />
 

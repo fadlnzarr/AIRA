@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { AppointmentsFilter, AppointmentsFilterState, DEFAULT_APPOINTMENTS_FILTERS } from '../../components/dashboard/appointments/AppointmentsFilter';
 import { AppointmentsList, Appointment } from '../../components/dashboard/appointments/AppointmentsList';
@@ -8,6 +8,8 @@ import { AppointmentDrawer } from '../../components/dashboard/appointments/Appoi
 import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
 import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
 import { fetchAppointments } from '../../src/lib/googleSheets';
+import { useClientSheetId } from '../../src/lib/useClientSheetId';
+import { ClientSelectorBar } from '../../components/dashboard/ClientSelectorBar';
 import { Loader2 } from 'lucide-react';
 
 function parseDate(dateStr: string): Date | null {
@@ -21,7 +23,9 @@ export const Appointments: React.FC = () => {
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
     const [filters, setFilters] = useState<AppointmentsFilterState>(DEFAULT_APPOINTMENTS_FILTERS);
 
-    const { data: appointments, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchAppointments);
+    const sheetId = useClientSheetId();
+    const appointmentsFetcher = useCallback(() => fetchAppointments(sheetId), [sheetId]);
+    const { data: appointments, loading, error, lastUpdated, refresh } = useGoogleSheets(appointmentsFetcher, [sheetId]);
 
     const statusCounts = useMemo(() => {
         const counts: Record<string, number> = {};
@@ -59,11 +63,13 @@ export const Appointments: React.FC = () => {
                         Appointments
                     </h2>
                     <p className="text-[#1A1A1A]/60 text-sm">
-                        Manage your upcoming bookings and schedule.
+                        View your upcoming bookings and schedule.
                     </p>
                 </div>
                 <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
+
+            <ClientSelectorBar />
 
             <AppointmentsFilter view={view} onViewChange={setView} filters={filters} onFilterChange={setFilters} statusCounts={statusCounts} />
 
@@ -84,7 +90,10 @@ export const Appointments: React.FC = () => {
                         onRowClick={(apt) => setSelectedAppointment(apt)}
                     />
                 ) : (
-                    <AppointmentsCalendar />
+                    <AppointmentsCalendar
+                        appointments={filteredAppointments}
+                        onSelect={(apt) => setSelectedAppointment(apt)}
+                    />
                 )}
             </motion.div>
 

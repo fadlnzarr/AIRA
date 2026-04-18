@@ -1,35 +1,23 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { ToggleLeft, ToggleRight, Clock } from 'lucide-react';
-
-interface DaySchedule {
-    day: string;
-    isOpen: boolean;
-    start: string;
-    end: string;
-}
+import { useSettingsContext } from './SettingsContext';
 
 export const BusinessHours: React.FC = () => {
-    const [schedule, setSchedule] = useState<DaySchedule[]>([
-        { day: 'Monday', isOpen: true, start: '09:00', end: '17:00' },
-        { day: 'Tuesday', isOpen: true, start: '09:00', end: '17:00' },
-        { day: 'Wednesday', isOpen: true, start: '09:00', end: '17:00' },
-        { day: 'Thursday', isOpen: true, start: '09:00', end: '17:00' },
-        { day: 'Friday', isOpen: true, start: '09:00', end: '17:00' },
-        { day: 'Saturday', isOpen: false, start: '10:00', end: '14:00' },
-        { day: 'Sunday', isOpen: false, start: '10:00', end: '14:00' },
-    ]);
+    const { settings, setSettings } = useSettingsContext();
+    const { businessHours: schedule } = settings;
+
 
     const toggleDay = (index: number) => {
         const newSchedule = [...schedule];
-        newSchedule[index].isOpen = !newSchedule[index].isOpen;
-        setSchedule(newSchedule);
+        newSchedule[index] = { ...newSchedule[index], isOpen: !newSchedule[index].isOpen };
+        setSettings({ ...settings, businessHours: newSchedule });
     };
 
     const updateTime = (index: number, field: 'start' | 'end', value: string) => {
         const newSchedule = [...schedule];
         newSchedule[index] = { ...newSchedule[index], [field]: value };
-        setSchedule(newSchedule);
+        setSettings({ ...settings, businessHours: newSchedule });
     };
 
     return (

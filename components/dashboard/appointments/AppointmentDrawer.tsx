@@ -1,8 +1,18 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Calendar, Clock, MapPin, User, Mail, Phone, FileText, Save } from 'lucide-react';
-import { StatusBadge } from '../../ui/StatusBadge';
+import { X, Calendar, Clock, MapPin, User, Mail, Phone, FileText } from 'lucide-react';
+
+function apptStatusBadge(status: string): string {
+    switch (status) {
+        case 'confirmed':   return 'bg-emerald-100 text-[#1A1A1A] ring-1 ring-emerald-200';
+        case 'completed':   return 'bg-sky-100 text-[#1A1A1A] ring-1 ring-sky-200';
+        case 'pending':     return 'bg-amber-100 text-[#1A1A1A] ring-1 ring-amber-200';
+        case 'rescheduled': return 'bg-violet-100 text-[#1A1A1A] ring-1 ring-violet-200';
+        case 'cancelled':   return 'bg-red-100 text-[#1A1A1A] ring-1 ring-red-200';
+        default:            return 'bg-zinc-100 text-[#1A1A1A] ring-1 ring-zinc-200';
+    }
+}
 
 interface AppointmentDrawerProps {
     isOpen: boolean;
@@ -38,9 +48,9 @@ export const AppointmentDrawer: React.FC<AppointmentDrawerProps> = ({ isOpen, on
                         <div className="px-6 py-5 border-b border-[#1A1A1A]/10 flex items-start justify-between">
                             <div>
                                 <h2 className="text-xl font-serif italic text-[#1A1A1A] mb-2">Appointment Details</h2>
-                                <StatusBadge status={appointmentData.statusType}>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${apptStatusBadge(appointmentData.status)}`}>
                                     {appointmentData.status.charAt(0).toUpperCase() + appointmentData.status.slice(1)}
-                                </StatusBadge>
+                                </span>
                             </div>
                             <button
                                 onClick={onClose}
@@ -86,11 +96,11 @@ export const AppointmentDrawer: React.FC<AppointmentDrawerProps> = ({ isOpen, on
                                     <div className="space-y-2 pt-2 border-t border-[#1A1A1A]/5">
                                         <div className="flex items-center gap-3 text-sm text-[#1A1A1A]/60">
                                             <Mail className="w-4 h-4 opacity-50" />
-                                            {appointmentData.email || "client@email.com"}
+                                            {appointmentData.email || "—"}
                                         </div>
                                         <div className="flex items-center gap-3 text-sm text-[#1A1A1A]/60">
                                             <Phone className="w-4 h-4 opacity-50" />
-                                            {appointmentData.phone || "+1 (555) 000-0000"}
+                                            {appointmentData.phone || "—"}
                                         </div>
                                     </div>
                                 </div>
@@ -98,52 +108,37 @@ export const AppointmentDrawer: React.FC<AppointmentDrawerProps> = ({ isOpen, on
 
                             {/* Service Context */}
                             <div className="space-y-2">
-                                <h3 className="text-sm font-medium text-[#1A1A1A]">Service</h3>
+                                <h3 className="text-sm font-medium text-[#1A1A1A] flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-[#1A1A1A]/40" /> Service
+                                </h3>
                                 <div className="p-3 bg-[#1A1A1A]/5 border border-[#1A1A1A]/5 rounded-lg text-[#1A1A1A]/80 text-sm">
                                     {appointmentData.service}
                                 </div>
                             </div>
 
-                            {/* Management Section */}
-                            <div className="space-y-4 pt-6 border-t border-[#1A1A1A]/5">
-                                <h3 className="text-sm font-medium text-[#1A1A1A]">Management</h3>
-
-                                {/* Status Update */}
+                            {/* Staff */}
+                            {appointmentData.staff && (
                                 <div className="space-y-2">
-                                    <label className="text-xs text-[#1A1A1A]/50">Update Status</label>
-                                    <select
-                                        defaultValue={appointmentData.status}
-                                        className="w-full bg-white border border-[#1A1A1A]/10 rounded-lg px-3 py-2 text-sm text-[#1A1A1A] focus:border-[#1A1A1A]/30 outline-none shadow-sm"
-                                    >
-                                        <option value="confirmed">Confirmed</option>
-                                        <option value="pending">Pending Confirmation</option>
-                                        <option value="rescheduled">Rescheduled</option>
-                                        <option value="cancelled">Cancelled</option>
-                                        <option value="completed">Completed</option>
-                                    </select>
+                                    <h3 className="text-sm font-medium text-[#1A1A1A]">Assigned Staff</h3>
+                                    <div className="flex items-center gap-3 p-3 bg-[#1A1A1A]/5 border border-[#1A1A1A]/5 rounded-lg">
+                                        <div className="w-8 h-8 rounded-full bg-[#1A1A1A]/10 text-[#1A1A1A] flex items-center justify-center text-sm font-medium">
+                                            {appointmentData.staff.charAt(0)}
+                                        </div>
+                                        <span className="text-sm text-[#1A1A1A]">{appointmentData.staff}</span>
+                                    </div>
                                 </div>
+                            )}
 
-                                {/* Notes */}
+                            {/* Notes (read-only) */}
+                            {appointmentData.notes && (
                                 <div className="space-y-2">
-                                    <label className="text-xs text-[#1A1A1A]/50">Internal Notes</label>
-                                    <textarea
-                                        className="w-full h-24 bg-white border border-[#1A1A1A]/10 rounded-lg px-3 py-2 text-sm text-[#1A1A1A] placeholder:text-[#1A1A1A]/30 focus:border-[#1A1A1A]/30 outline-none resize-none shadow-sm"
-                                        placeholder="Add notes about this appointment..."
-                                        defaultValue={appointmentData.notes}
-                                    />
+                                    <h3 className="text-sm font-medium text-[#1A1A1A]">Notes</h3>
+                                    <div className="p-3 bg-[#1A1A1A]/5 border border-[#1A1A1A]/5 rounded-lg text-[#1A1A1A]/70 text-sm leading-relaxed">
+                                        {appointmentData.notes}
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
+                            )}
 
-                        {/* Footer */}
-                        <div className="p-4 border-t border-[#1A1A1A]/10 bg-white/50 backdrop-blur-sm flex justify-end gap-3">
-                            <button onClick={onClose} className="px-4 py-2 text-sm text-[#1A1A1A]/60 hover:text-[#1A1A1A] transition-colors">
-                                Cancel
-                            </button>
-                            <button className="px-4 py-2 bg-[#1A1A1A] text-white rounded-lg text-sm font-medium hover:bg-black transition-colors flex items-center gap-2 shadow-lg shadow-black/5">
-                                <Save className="w-4 h-4" />
-                                Save Changes
-                            </button>
                         </div>
                     </motion.div>
                 </>

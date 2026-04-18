@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bell, Calendar as CalendarIcon, Shield } from 'lucide-react';
+import { Bell, Shield } from 'lucide-react';
 import { useAuth } from '../../src/lib/AuthContext';
 
 interface TopBarProps {
@@ -21,14 +21,6 @@ export const TopBar: React.FC<TopBarProps> = ({ title }) => {
 
             {/* Right Actions */}
             <div className="flex items-center gap-6">
-                {/* Date Selector (Mock) */}
-                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-[#1A1A1A]/5 rounded-lg border border-[#1A1A1A]/10 text-xs text-[#1A1A1A]/70 hover:bg-[#1A1A1A]/10 transition-colors cursor-pointer">
-                    <CalendarIcon className="w-3.5 h-3.5" />
-                    <span>Oct 24 - Oct 31</span>
-                </div>
-
-                <div className="w-px h-6 bg-[#1A1A1A]/10 hidden md:block" />
-
                 <button className="relative group">
                     <Bell className="w-5 h-5 text-[#1A1A1A]/50 group-hover:text-[#1A1A1A] transition-colors" />
                     <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_10px_rgba(239,68,68,0.5)]"></span>

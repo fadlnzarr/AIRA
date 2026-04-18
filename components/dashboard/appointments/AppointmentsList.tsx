@@ -1,7 +1,18 @@
 
 import React from 'react';
-import { MoreHorizontal, ArrowUpRight, Zap, User } from 'lucide-react';
-import { StatusBadge } from '../../ui/StatusBadge';
+import { ArrowUpRight, Zap, User } from 'lucide-react';
+
+// ── Badge helpers ──────────────────────────────────────────────────────────────
+function apptStatusBadge(status: string): string {
+    switch (status) {
+        case 'confirmed':   return 'bg-emerald-100 text-[#1A1A1A] ring-1 ring-emerald-200';
+        case 'completed':   return 'bg-sky-100 text-[#1A1A1A] ring-1 ring-sky-200';
+        case 'pending':     return 'bg-amber-100 text-[#1A1A1A] ring-1 ring-amber-200';
+        case 'rescheduled': return 'bg-violet-100 text-[#1A1A1A] ring-1 ring-violet-200';
+        case 'cancelled':   return 'bg-red-100 text-[#1A1A1A] ring-1 ring-red-200';
+        default:            return 'bg-zinc-100 text-[#1A1A1A] ring-1 ring-zinc-200';
+    }
+}
 
 export interface Appointment {
     id: string;
@@ -71,17 +82,17 @@ export const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments
                                 </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                <StatusBadge status={apt.statusType}>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${apptStatusBadge(apt.status)}`}>
                                     {apt.status.charAt(0).toUpperCase() + apt.status.slice(1)}
-                                </StatusBadge>
+                                </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                                 {apt.source === 'ai' ? (
-                                    <span className="inline-flex items-center gap-1 text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded border border-purple-200">
+                                    <span className="inline-flex items-center gap-1 text-xs text-[#1A1A1A] bg-violet-100 px-2 py-0.5 rounded-full ring-1 ring-violet-200">
                                         <Zap className="w-3 h-3" /> AI
                                     </span>
                                 ) : (
-                                    <span className="inline-flex items-center gap-1 text-xs text-[#1A1A1A]/50 bg-[#1A1A1A]/5 px-2 py-0.5 rounded border border-[#1A1A1A]/10">
+                                    <span className="inline-flex items-center gap-1 text-xs text-[#1A1A1A] bg-zinc-100 px-2 py-0.5 rounded-full ring-1 ring-zinc-200">
                                         <User className="w-3 h-3" /> Manual
                                     </span>
                                 )}

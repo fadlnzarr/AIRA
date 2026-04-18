@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { LeadsFilter, LeadsFilterState, DEFAULT_LEADS_FILTERS } from '../../components/dashboard/leads/LeadsFilter';
 import { LeadsTable, Lead } from '../../components/dashboard/leads/LeadsTable';
@@ -7,6 +7,8 @@ import { LeadsDrawer } from '../../components/dashboard/leads/LeadsDrawer';
 import { DataStatusBar } from '../../components/dashboard/DataStatusBar';
 import { useGoogleSheets } from '../../src/lib/useGoogleSheets';
 import { fetchLeads } from '../../src/lib/googleSheets';
+import { useClientSheetId } from '../../src/lib/useClientSheetId';
+import { ClientSelectorBar } from '../../components/dashboard/ClientSelectorBar';
 import { Loader2 } from 'lucide-react';
 
 function parseDate(dateStr: string): Date | null {
@@ -19,7 +21,9 @@ export const Leads: React.FC = () => {
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [filters, setFilters] = useState<LeadsFilterState>(DEFAULT_LEADS_FILTERS);
 
-    const { data: leads, loading, error, lastUpdated, refresh } = useGoogleSheets(fetchLeads);
+    const sheetId = useClientSheetId();
+    const leadsFetcher = useCallback(() => fetchLeads(sheetId), [sheetId]);
+    const { data: leads, loading, error, lastUpdated, refresh } = useGoogleSheets(leadsFetcher, [sheetId]);
 
     const statusCounts = useMemo(() => {
         const counts: Record<string, number> = {};
@@ -66,14 +70,16 @@ export const Leads: React.FC = () => {
             <div className="flex items-end justify-between">
                 <div>
                     <h2 className="text-2xl font-serif italic text-[#1A1A1A] mb-1">
-                        Leads Management
+                        Leads Overview
                     </h2>
                     <p className="text-[#1A1A1A]/60 text-sm">
-                        Track, assign, and convert incoming leads.
+                        Track, analyze, and monitor incoming leads.
                     </p>
                 </div>
                 <DataStatusBar loading={loading} error={error} lastUpdated={lastUpdated} onRefresh={refresh} />
             </div>
+
+            <ClientSelectorBar />
 
             <LeadsFilter filters={filters} onFilterChange={setFilters} statusCounts={statusCounts} urgencyCounts={urgencyCounts} />
 
