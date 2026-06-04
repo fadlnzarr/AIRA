@@ -13,7 +13,8 @@ import {
     LogOut,
     UserPlus,
     Shield,
-    Contact
+    Contact,
+    ExternalLink
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../src/lib/AuthContext';
@@ -107,6 +108,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed, setCollapsed }) => 
                         </span>
                     </NavLink>
                 ))}
+
+                {/* Back to Website */}
+                <button
+                    onClick={() => navigate('/')}
+                    className="flex items-center gap-3 px-3 py-3 rounded-xl text-[#1A1A1A]/50 hover:text-[#1A1A1A] hover:bg-[#1A1A1A]/5 transition-all"
+                    title="Back to Website"
+                >
+                    <ExternalLink className="w-5 h-5 min-w-[20px]" />
+                    <span className={`text-sm font-medium whitespace-nowrap overflow-hidden transition-all duration-300 ${collapsed ? 'w-0 opacity-0' : 'w-auto opacity-100'}`}>
+                        Back to Website
+                    </span>
+                </button>
 
                 {/* Logout */}
                 <button

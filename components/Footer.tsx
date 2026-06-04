@@ -134,7 +134,7 @@ export const Footer: React.FC = () => {
                 <Mail className="w-5 h-5 text-white mt-1" />
                 <div>
                   <span className="block text-white font-sans text-sm font-bold uppercase tracking-wider mb-1">Email</span>
-                  <span className="font-serif italic text-lg group-hover:text-white transition-colors">contact@airasystems.co</span>
+                  <span className="font-serif italic text-lg group-hover:text-white transition-colors">contact@aira.company</span>
                 </div>
               </li>
               <li className="flex items-start gap-4 text-white/60 group cursor-pointer">

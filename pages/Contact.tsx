@@ -7,7 +7,7 @@ import { MetallicScrollBackground } from '../components/ui/metallic-scroll-backg
 import { DatePickerModal } from '../components/ui/DatePickerModal';
 import { format } from 'date-fns';
 
-import { api } from '../src/lib/api';
+import { sheetsApi } from '../src/lib/sheetsApi';
 
 export const Contact: React.FC = () => {
     const location = useLocation();
@@ -51,21 +51,18 @@ export const Contact: React.FC = () => {
         setErrorMessage(null);
 
         try {
-            // Construct ISO date from date and time strings
-            // Date is already a Date object in state now
-
             if (!formState.date || !formState.time) {
                 throw new Error("Please select both a date and time.");
             }
 
-            await api.post('/api/book-appointment', {
+            await sheetsApi.submitBooking({
                 fullName: formState.name,
                 email: formState.email,
-                businessName: formState.company,
                 phone: formState.phone,
+                businessName: formState.company,
                 industry: formState.industry,
                 missionBrief: formState.message,
-                appointmentDate: formState.date.toISOString(),
+                appointmentDate: formState.date.toLocaleDateString(),
                 appointmentTime: formState.time,
             });
 
