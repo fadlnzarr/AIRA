@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../src/lib/AuthContext';
 import { Lock, User, Eye, EyeOff, ArrowRight, AlertCircle, Shield, Users } from 'lucide-react';
+import { LogoIcon } from '../components/Navbar';
 
 export const Login: React.FC = () => {
     const [username, setUsername] = useState('');
@@ -74,15 +75,18 @@ export const Login: React.FC = () => {
                         {/* Logo */}
                         <div className="text-center mb-10">
                             <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10 mb-6"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                                className="inline-flex items-center justify-center gap-2.5 mb-6"
                             >
-                                <span className="text-white font-bold text-2xl tracking-tighter" style={{ fontFamily: 'serif' }}>A</span>
+                                <LogoIcon className="w-8 h-8 text-[#d92514]" />
+                                <span className="font-serif italic font-bold text-3xl tracking-tight text-white">
+                                    AIRA
+                                </span>
                             </motion.div>
                             <h1 className="text-2xl font-light text-white tracking-tight mb-2">
-                                Welcome to <span className="font-semibold">AIRA</span>
+                                Welcome back
                             </h1>
                             <p className="text-white/40 text-sm">
                                 Sign in to access your dashboard
@@ -170,7 +174,24 @@ export const Login: React.FC = () => {
                         </p>
                     </div>
                 </motion.div>
+
+                {/* Back to website */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.6 }}
+                    className="text-center mt-6"
+                >
+                    <button
+                        onClick={() => navigate('/')}
+                        className="inline-flex items-center gap-1.5 text-white/30 hover:text-white/60 text-sm transition-colors group"
+                    >
+                        <ArrowRight className="w-3.5 h-3.5 rotate-180 group-hover:-translate-x-1 transition-transform" />
+                        Back to website
+                    </button>
+                </motion.div>
             </motion.div>
         </div>
+
     );
 };

@@ -96,7 +96,7 @@ export const Home: React.FC = () => {
                                             label: "Script Adherence"
                                         },
                                         {
-                                            val: "Infinite",
+                                            val: "Seamless",
                                             label: "Concurrent Calls"
                                         }
                                     ].map((stat, i) => (

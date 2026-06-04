@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { AnimatedSection } from '../components/AnimatedSection';
 import { Button } from '../components/Button';
 import { Send, Loader2, CheckCircle, UploadCloud } from 'lucide-react';
+import { sheetsApi } from '../src/lib/sheetsApi';
+
 
 // Reusable UI components - Moved OUTSIDE the main component to prevent loss of focus (React re-mount issues)
 const InputField = ({ label, name, type = 'text', required = false, placeholder = '', value, onChange }: { label: string, name: string, type?: string, required?: boolean, placeholder?: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
@@ -170,24 +172,7 @@ export const ClientIntake: React.FC = () => {
         setErrorMessage(null);
 
         try {
-            const webhookUrl = 'https://ntest.app.n8n.cloud/webhook/1369ea4b-1c17-4b5d-b681-a6e451f54a5b';
-            
-            const response = await fetch(webhookUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    eventName: 'Client_Intake_Submission',
-                    timestamp: new Date().toISOString(),
-                    data: formState
-                }),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to submit form to webhook.');
-            }
-            
+            await sheetsApi.submitIntake(formState);
             setIsSuccess(true);
         } catch (error: any) {
             console.error("Submission failed:", error);
@@ -196,6 +181,7 @@ export const ClientIntake: React.FC = () => {
             setIsSubmitting(false);
         }
     };
+
 
     if (isSuccess) {
         return (
